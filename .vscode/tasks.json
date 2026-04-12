@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-c",
+            "type": "shell",
+            "command": "gcc",
+            "args": [
+                "-g",
+                "${fileDirname}\\main.c",
+                "-o",
+                "${fileDirname}\\main.exe",
+                "&&",
+                "cls",
+                "&&",
+                "${fileDirname}\\main.exe",
+                "&&",
+                "echo.",
+                "&&",
+                "pause"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$gcc"
+        }
+    ]
+}
