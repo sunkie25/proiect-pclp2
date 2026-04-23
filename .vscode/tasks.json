@@ -6,18 +6,12 @@
             "type": "shell",
             "command": "gcc",
             "args": [
+                "-Wall",
+                "-Wextra",
                 "-g",
-                "${fileDirname}\\main.c",
+                "${workspaceFolder}\\main.c",
                 "-o",
-                "${fileDirname}\\main.exe",
-                "&&",
-                "cls",
-                "&&",
-                "${fileDirname}\\main.exe",
-                "&&",
-                "echo.",
-                "&&",
-                "pause"
+                "${workspaceFolder}\\main.exe"
             ],
             "group": {
                 "kind": "build",
