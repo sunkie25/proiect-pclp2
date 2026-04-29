@@ -1,4 +1,3 @@
-# proiect-pclp2
-cel mai smecher proiect pt pclp2
-
-(nu stiu inca ce fac 😤😤😤😤)
+# proiect-pclp2: slot machine
+septar septar septar septar septar  
+curati lacrima

@@ -4,15 +4,8 @@
         {
             "label": "build-c",
             "type": "shell",
-            "command": "gcc",
-            "args": [
-                "-Wall",
-                "-Wextra",
-                "-g",
-                "${workspaceFolder}\\main.c",
-                "-o",
-                "${workspaceFolder}\\main.exe"
-            ],
+
+            "command": "taskkill /f /im main.exe /t 2>nul & gcc -Wall -Wextra -g \"${workspaceFolder}\\main.c\" -o \"${workspaceFolder}\\main.exe\" -lfreeglut -lglu32 -lopengl32 && \"${workspaceFolder}\\main.exe\"",
             "group": {
                 "kind": "build",
                 "isDefault": true
