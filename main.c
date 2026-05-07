@@ -18,22 +18,20 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
 #define TEST_MODE
 
-// notification types
 #define NOTIFICATION_TYPE_ERROR         (0)
 #define NOTIFICATION_TYPE_SUCCESS       (1)
 #define NOTIFICATION_TYPE_WARNING       (2)
 
-// game container size
 #define GAME_WINDOW_WIDTH               (1152)
 #define GAME_WINDOW_HEIGHT              (640)
 
-// default cash balance & bet
 #ifdef TEST_MODE
 #define DEFAULT_CASH_BALANCE            (500)
 #else
@@ -42,8 +40,11 @@
 
 #define DEFAULT_BET                     (5)
 
-// item types
 #define ITEM_TYPE_TEST                  (0)
+#define ITEM_TYPE_CASH                  (1)
+#define ITEM_TYPE_DIAMOND               (2)
+#define ITEM_TYPE_ROMB                  (3)
+#define ITEM_TYPE_BAR                   (4)
 
 int cashBalance = DEFAULT_CASH_BALANCE;
 
@@ -144,6 +145,23 @@ void showNotification(int type, char content[64])
     glutPostRedisplay();
 }
 
+void drawCircle(float cx, float cy, float radius, int segments)
+{
+    int i = 0;
+    float angle = 0.0f;
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(cx, cy);
+
+    for(i = 0; i <= segments; i++)
+    {
+        angle = 2.0f * 3.14159f * i / segments;
+        glVertex2f(cx + cos(angle) * radius, cy + sin(angle) * radius);
+    }
+
+    glEnd();
+}
+
 void updateCashBalanceUI()
 {
     int i = 0;
@@ -209,19 +227,119 @@ void updateBetButtonsUI()
 
 void drawSlotItem(int type, float x, float y)
 {
+    int i = 0;
     switch(type)
     {
         case ITEM_TYPE_TEST:
         {
+            // {-0.94f, 0.88f, -0.57f, 0.45f},
+            
             glBegin(GL_QUADS);
             glColor3f(1.0f, 0.0f, 0.0f);
-            glVertex2f(x + 0.01f, y - 0.02f);
-            glVertex2f(x + 0.38f, y - 0.02f);
-            glVertex2f(x + 0.38f, y - 0.46f);
-            glVertex2f(x + 0.01f, y - 0.46f);
 
+            glVertex2f(x + 0.1f, y - 0.08f);
+            glVertex2f(x + 0.255f, y - 0.08f);
+            glVertex2f(x + 0.255f, y - 0.12f);
+            glVertex2f(x + 0.1f, y - 0.12f);
             glEnd();
 
+            glBegin(GL_QUADS);
+            glColor3f(1.0f, 0.0f, 0.0f);
+            glVertex2f(x + 0.255f, y - 0.11f);
+            glVertex2f(x + 0.145f, y - 0.36f);
+            glVertex2f(x + 0.115f, y - 0.36f);
+            glVertex2f(x + 0.225f, y - 0.11f);
+            glEnd();
+
+            break;
+        }
+
+        case ITEM_TYPE_CASH:
+        {
+            for(i = 0; i < 3; i++)
+            {
+                glBegin(GL_QUADS);
+                glColor3f(0.0f, 0.8f, 0.1f);
+                glVertex2f(x + 0.1f, y - 0.08f - i * 0.11f);
+                glVertex2f(x + 0.255f, y - 0.08f - i * 0.11f);
+                glVertex2f(x + 0.255f, y - 0.12f - i * 0.11f);
+                glVertex2f(x + 0.1f, y - 0.12f - i * 0.11f);
+                glEnd();
+            }
+
+            glBegin(GL_QUADS);
+            glColor3f(0.0f, 0.8f, 0.1f);
+            glVertex2f(x + 0.1f, y - 0.08f);
+            glVertex2f(x + 0.125f, y - 0.08f);
+            glVertex2f(x + 0.125f, y - 0.22f);
+            glVertex2f(x + 0.1f, y - 0.22f);
+            glEnd();
+
+            glBegin(GL_QUADS);
+            glColor3f(0.0f, 0.8f, 0.1f);
+            glVertex2f(x + 0.23f, y - 0.20f);
+            glVertex2f(x + 0.255f, y - 0.20f);
+            glVertex2f(x + 0.255f, y - 0.34f);
+            glVertex2f(x + 0.23f, y - 0.34f);
+            glEnd();
+
+            glBegin(GL_QUADS);
+            glColor3f(0.0f, 0.8f, 0.1f);
+            glVertex2f(x + 0.17f, y - 0.05f);
+            glVertex2f(x + 0.195f, y - 0.05f);
+            glVertex2f(x + 0.195f, y - 0.37f);
+            glVertex2f(x + 0.17f, y - 0.37f);
+            glEnd();
+            break;
+        }
+    
+        case ITEM_TYPE_DIAMOND:
+        {
+            glBegin(GL_TRIANGLES);
+            glColor3f(0.2f, 0.6f, 0.9f);
+            glVertex2f(x + 0.175f, y - 0.33f);
+            glVertex2f(x + 0.1f, y - 0.13f);
+            glVertex2f(x + 0.25f, y - 0.13f);
+            glEnd();
+
+            glBegin(GL_POLYGON);
+            glColor3f(0.2f, 0.6f, 0.9f);
+            glVertex2f(x + 0.1f, y - 0.13f);
+            glVertex2f(x + 0.125f, y - 0.08f);
+            glVertex2f(x + 0.225f, y - 0.08f);
+            glVertex2f(x + 0.25f, y - 0.13f);
+            glEnd();
+            break;
+        }
+   
+        case ITEM_TYPE_ROMB:
+        {
+            glBegin(GL_POLYGON);
+            glColor3f(0.9f, 0.1f, 0.9f);
+            glVertex2f(x + 0.175f, y - 0.10f);
+            glVertex2f(x + 0.125f, y - 0.22f);
+            glVertex2f(x + 0.175f, y - 0.34f);
+            glVertex2f(x + 0.225f, y - 0.22f);
+            glEnd();
+            break;
+        }
+   
+        case ITEM_TYPE_BAR:
+        {
+            glBegin(GL_QUADS);
+            glColor3f(1.0f, 0.8f, 0.0f);
+            glVertex2f(x + 0.10f, y - 0.1f);
+            glVertex2f(x + 0.255f, y - 0.1f);
+            glVertex2f(x + 0.255f, y - 0.3f);
+            glVertex2f(x + 0.10f, y - 0.3f);
+            glEnd();
+
+            glColor3f(0.0f, 0.0f, 0.0f);
+            glRasterPos2f(x + 0.145f, y - 0.22f);
+
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'B');
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'A');
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'R');
             break;
         }
     }
@@ -235,8 +353,6 @@ void drawSlotItems()
     // slotItemWon[9] = 1;
 
     int i = 0, j = 0;
-
-    // draw backgrounds
     for(i = 0; i < 3; i++)
     {
         for(j = 0; j < 5; j++)
@@ -258,6 +374,8 @@ void drawSlotItems()
             glVertex2f(slotItemDesigns[i * 5 + j].endX, slotItemDesigns[i * 5 + j].endY);
             glVertex2f(slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].endY);
             glEnd();
+
+            drawSlotItem(rand() % 5, slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].startY);
         }
     }
 }
@@ -268,7 +386,6 @@ void drawSlotMachineContainer()
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
-    // contur
     glBegin(GL_QUADS);
 	glColor3f(0.0f, 0.0f, 0.0f);
 	glVertex2f(-0.95f, -0.5f);
@@ -288,7 +405,6 @@ void drawSlotMachineContainer()
 
     drawSlotItems();
 
-    // linii intre... linii
     glBegin(GL_QUADS);
     glColor3f(0.0f, 0.0f, 0.0f);
     glVertex2f(-0.95f, 0.45f);
@@ -305,7 +421,6 @@ void drawSlotMachineContainer()
     glVertex2f(-0.95f, -0.035f);
     glEnd();
 
-    // coloane
     for(i = 0; i < 4; i++)
     {
         glBegin(GL_QUADS);
@@ -325,13 +440,10 @@ void drawSlotMachineContainer()
     glVertex2f(0.65f, -0.60f);
     glEnd();
 
-    // balanta
     updateCashBalanceUI();
 
-    // BET
     updateBetButtonsUI();
 
-    // SPIN
     glColor3f(0.0f, 0.0f, 0.0f);
     glRasterPos2f(0.735f, -0.72f);
 
@@ -341,7 +453,6 @@ void drawSlotMachineContainer()
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, spinText[i]);
     }
 
-    // notification text
     createNotificationText();
 
 	glFlush();
@@ -429,7 +540,6 @@ void onMouse(int button, int state, int x, int y)
 
         if(!clickedBetButton)
         {
-            // verifica dupa spin
             x1 = 950;
             x2 = 1093;
             y1 = 510;
