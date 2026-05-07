@@ -33,6 +33,8 @@ int cashBalance = DEFAULT_CASH_BALANCE;
 int availableBets[4] = {5, 10, 50, 100};
 int selectedBet = 2;
 
+int errorTimerId = 0;
+
 char slotItemTypes[5][2] = {
     "#", "@", "$", "%", "&"
 };
@@ -59,9 +61,19 @@ void hideError()
     glutPostRedisplay();
 }
 
+void hideErrorDelayed(int value)
+{
+    if(value == errorTimerId)
+    {
+        hideError();
+    }
+}
+
 void showError(char content[64])
 {
     strcpy(errorMessage, content);
+    errorTimerId++;
+    glutTimerFunc(5000, hideErrorDelayed, errorTimerId);
     glutPostRedisplay();
 }
 
