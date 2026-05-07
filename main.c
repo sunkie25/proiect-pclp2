@@ -24,14 +24,16 @@
 
 #define TEST_MODE
 
+// notification types
 #define NOTIFICATION_TYPE_ERROR         (0)
 #define NOTIFICATION_TYPE_SUCCESS       (1)
 #define NOTIFICATION_TYPE_WARNING       (2)
 
-
+// game container size
 #define GAME_WINDOW_WIDTH               (1152)
 #define GAME_WINDOW_HEIGHT              (640)
 
+// default cash balance & bet
 #ifdef TEST_MODE
 #define DEFAULT_CASH_BALANCE            (500)
 #else
@@ -39,6 +41,9 @@
 #endif
 
 #define DEFAULT_BET                     (5)
+
+// item types
+#define ITEM_TYPE_TEST                  (0)
 
 int cashBalance = DEFAULT_CASH_BALANCE;
 
@@ -51,6 +56,40 @@ int notificationType = NOTIFICATION_TYPE_ERROR;
 char slotItemTypes[5][2] = {
     "#", "@", "$", "%", "&"
 };
+
+struct slotItemDesign {
+    float startX;
+    float startY;
+    float endX;
+    float endY;
+} slotItemDesigns[15] = {
+    // coloana 1
+    {-0.94f, 0.88f, -0.57f, 0.45f},
+    {-0.94f, 0.435f, -0.57f, -0.02f},
+    {-0.94f, -0.02f, -0.57f, -0.48f},
+
+    // coloana 2
+    {-0.565f, 0.88f, -0.195f, 0.45f},
+    {-0.565f, 0.435f, -0.195f, -0.02f},
+    {-0.565f, -0.02f, -0.195f, -0.48f},
+
+    // coloana 3
+    {-0.185f, 0.88f, 0.185f, 0.45f},
+    {-0.185f, 0.435f, 0.185f, -0.02f},
+    {-0.185f, -0.02f, 0.185f, -0.48f},
+
+    // coloana 4
+    {0.195f, 0.88f, 0.575f, 0.45f},
+    {0.195f, 0.435f, 0.575f, -0.02f},
+    {0.195f, -0.02f, 0.575f, -0.48f},
+
+    // coloana 5
+    {0.575f, 0.88f, 0.94f, 0.45f},
+    {0.575f, 0.435f, 0.94f, -0.02f},
+    {0.575f, -0.02f, 0.94f, -0.48f}
+};
+
+int slotItemWon[15];
 
 char notificationMessage[64] = "";
 
@@ -168,9 +207,64 @@ void updateBetButtonsUI()
     }
 }
 
+void drawSlotItem(int type, float x, float y)
+{
+    switch(type)
+    {
+        case ITEM_TYPE_TEST:
+        {
+            glBegin(GL_QUADS);
+            glColor3f(1.0f, 0.0f, 0.0f);
+            glVertex2f(x + 0.01f, y - 0.02f);
+            glVertex2f(x + 0.38f, y - 0.02f);
+            glVertex2f(x + 0.38f, y - 0.46f);
+            glVertex2f(x + 0.01f, y - 0.46f);
+
+            glEnd();
+
+            break;
+        }
+    }
+}
+
+void drawSlotItems()
+{
+    // slotItemWon[0] = 1;
+    // slotItemWon[3] = 1;
+    // slotItemWon[6] = 1;
+    // slotItemWon[9] = 1;
+
+    int i = 0, j = 0;
+
+    // draw backgrounds
+    for(i = 0; i < 3; i++)
+    {
+        for(j = 0; j < 5; j++)
+        {
+            glBegin(GL_QUADS);
+            
+            if(slotItemWon[i * 5 + j])
+            {
+                glColor3f(0.0f, 0.92f, 0.0f);
+            }
+
+            else
+            {
+                glColor3f(0.94f, 0.6f, 0.5f);
+            }
+
+            glVertex2f(slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].startY);
+            glVertex2f(slotItemDesigns[i * 5 + j].endX, slotItemDesigns[i * 5 + j].startY);
+            glVertex2f(slotItemDesigns[i * 5 + j].endX, slotItemDesigns[i * 5 + j].endY);
+            glVertex2f(slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].endY);
+            glEnd();
+        }
+    }
+}
+
 void drawSlotMachineContainer() 
 {
-    int i = 0, j = 0;
+    int i = 0;
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
@@ -184,13 +278,15 @@ void drawSlotMachineContainer()
 	glEnd();
 
     // fundal
-    glBegin(GL_QUADS);
-	glColor3f(1.0f, 1.0f, 1.0f);
-	glVertex2f(-0.94f, -0.48f);
-	glVertex2f( 0.94f, -0.48f);
-	glVertex2f( 0.94f, 0.88f);
-	glVertex2f(-0.94f, 0.88f);
-	glEnd();
+    // glBegin(GL_QUADS);
+	// glColor3f(0.94f, 0.6f, 0.5f);
+	// glVertex2f(-0.94f, -0.48f);
+	// glVertex2f( 0.94f, -0.48f);
+	// glVertex2f( 0.94f, 0.88f);
+	// glVertex2f(-0.94f, 0.88f);
+	// glEnd();
+
+    drawSlotItems();
 
     // linii intre... linii
     glBegin(GL_QUADS);
