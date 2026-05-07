@@ -23,11 +23,11 @@ jobs:
 
     - name: Install GLUT (Windows)
       if: matrix.os == 'windows-latest'
-      run: choco install freeglut
+      run: vcpkg install freeglut:x64-windows
 
     - name: Compile (Windows)
       if: matrix.os == 'windows-latest'
-      run: gcc main.c -o main-windows.exe -lfreeglut -lopengl32 -lglu32
+      run: gcc main.c -o main-windows.exe -IC:/vcpkg/installed/x64-windows/include -LC:/vcpkg/installed/x64-windows/lib -lfreeglut -lopengl32 -lglu32
 
     - name: Compile (Linux)
       if: matrix.os == 'ubuntu-latest'
@@ -40,3 +40,4 @@ jobs:
         path: |
           main-windows.exe
           main-linux
+          C:/vcpkg/installed/x64-windows/bin/freeglut.dll
