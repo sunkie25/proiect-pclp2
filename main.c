@@ -37,16 +37,32 @@ char slotItemTypes[5][2] = {
     "#", "@", "$", "%", "&"
 };
 
-void showError(char content[64])
+char errorMessage[64] = "";
+
+void createErrorText()
 {
     int i = 0;
+    if(strlen(errorMessage) == 0) return;
+
     glColor3f(1.0f, 0.0f, 0.0f);
     glRasterPos2f(-0.95f, -0.95f);
 
-    for(i = 0; i < (int)strlen(content); i++)
+    for(i = 0; i < (int)strlen(errorMessage); i++)
     {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, content[i]);
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, errorMessage[i]);
     }
+}
+
+void hideError()
+{
+    errorMessage[0] = '\0';
+    glutPostRedisplay();
+}
+
+void showError(char content[64])
+{
+    strcpy(errorMessage, content);
+    glutPostRedisplay();
 }
 
 void updateCashBalanceUI()
@@ -189,6 +205,9 @@ void drawSlotMachineContainer()
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, spinText[i]);
     }
 
+    // error text
+    createErrorText();
+
 	glFlush();
 }
 
@@ -198,7 +217,6 @@ void handleSpinButton()
     if(cashBalance < availableBets[selectedBet])
     {
         showError("You don't have enough coins to select this bet!");
-        glutPostRedisplay();
         return;
     }
 
