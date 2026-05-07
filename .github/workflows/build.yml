@@ -17,13 +17,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install GLUT (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install -y freeglut3-dev
+
+    - name: Install GLUT (Windows)
+      if: matrix.os == 'windows-latest'
+      run: choco install freeglut
+
     - name: Compile (Windows)
       if: matrix.os == 'windows-latest'
-      run: gcc main.c -o main-windows.exe
+      run: gcc main.c -o main-windows.exe -lfreeglut -lopengl32 -lglu32
 
     - name: Compile (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: gcc main.c -o main-linux
+      run: gcc main.c -o main-linux -lGL -lGLU -lglut
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
