@@ -22,58 +22,86 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
-#define DEFAULT_CASH_BALANCE        (1000)
-#define DEFAULT_BET                 (5)
+#define TEST_MODE
 
-#define GAME_WINDOW_WIDTH           (1152)
-#define GAME_WINDOW_HEIGHT          (640)
+#define NOTIFICATION_TYPE_ERROR         (0)
+#define NOTIFICATION_TYPE_SUCCESS       (1)
+#define NOTIFICATION_TYPE_WARNING       (2)
+
+
+#define GAME_WINDOW_WIDTH               (1152)
+#define GAME_WINDOW_HEIGHT              (640)
+
+#ifdef TEST_MODE
+#define DEFAULT_CASH_BALANCE            (500)
+#else
+#define DEFAULT_CASH_BALANCE            (10000)
+#endif
+
+#define DEFAULT_BET                     (5)
 
 int cashBalance = DEFAULT_CASH_BALANCE;
 
 int availableBets[4] = {5, 10, 50, 100};
 int selectedBet = 2;
 
-int errorTimerId = 0;
+int notificationTimerId = 0;
+int notificationType = NOTIFICATION_TYPE_ERROR;
 
 char slotItemTypes[5][2] = {
     "#", "@", "$", "%", "&"
 };
 
-char errorMessage[64] = "";
+char notificationMessage[64] = "";
 
-void createErrorText()
+void createNotificationText()
 {
     int i = 0;
-    if(strlen(errorMessage) == 0) return;
+    if(strlen(notificationMessage) == 0) return;
 
-    glColor3f(1.0f, 0.0f, 0.0f);
+    if(notificationType == NOTIFICATION_TYPE_ERROR)
+    {
+        glColor3f(1.0f, 0.0f, 0.0f);
+    }
+
+    else if(notificationType == NOTIFICATION_TYPE_SUCCESS)
+    {
+        glColor3f(0.0f, 0.8f, 0.0f);
+    }
+
+    else if(notificationType == NOTIFICATION_TYPE_WARNING)
+    {
+        glColor3f(1.0f, 0.65f, 0.0f);
+    }
+
     glRasterPos2f(-0.95f, -0.95f);
 
-    for(i = 0; i < (int)strlen(errorMessage); i++)
+    for(i = 0; i < (int)strlen(notificationMessage); i++)
     {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, errorMessage[i]);
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, notificationMessage[i]);
     }
 }
 
-void hideError()
+void hideNotification()
 {
-    errorMessage[0] = '\0';
+    notificationMessage[0] = '\0';
     glutPostRedisplay();
 }
 
-void hideErrorDelayed(int value)
+void hideNotificationDelayed(int value)
 {
-    if(value == errorTimerId)
+    if(value == notificationTimerId)
     {
-        hideError();
+        hideNotification();
     }
 }
 
-void showError(char content[64])
+void showNotification(int type, char content[64])
 {
-    strcpy(errorMessage, content);
-    errorTimerId++;
-    glutTimerFunc(5000, hideErrorDelayed, errorTimerId);
+    strcpy(notificationMessage, content);
+    notificationType = type;
+    notificationTimerId++;
+    glutTimerFunc(5000, hideNotificationDelayed, notificationTimerId);
     glutPostRedisplay();
 }
 
@@ -217,23 +245,32 @@ void drawSlotMachineContainer()
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, spinText[i]);
     }
 
-    // error text
-    createErrorText();
+    // notification text
+    createNotificationText();
 
 	glFlush();
 }
 
 void handleSpinButton()
 {   
-    printf("\nSPIN BUTTON CLICKED!\n");
+    #ifdef TEST_MODE
+        printf("\nSPIN BUTTON CLICKED!\n");
+    #endif
+
     if(cashBalance < availableBets[selectedBet])
     {
-        showError("You don't have enough coins to select this bet!");
+        showNotification(NOTIFICATION_TYPE_ERROR, "You don't have enough coins to select this bet!");
+
+        selectedBet = -1;
+        updateBetButtonsUI();
         return;
     }
 
     cashBalance -= availableBets[selectedBet];
     updateCashBalanceUI();
+
+    showNotification(NOTIFICATION_TYPE_SUCCESS, "Spinning the reels... Good luck!");
+
     glutPostRedisplay();
 }
 
@@ -267,12 +304,24 @@ void onMouse(int button, int state, int x, int y)
 
                 if(cashBalance < availableBets[i])
                 {
-                    showError("You don't have enough coins to select this bet!");
-                    printf("n-ai bani boss\n");
-                    break;
+                    showNotification(NOTIFICATION_TYPE_ERROR, "You don't have enough coins to select this bet!");
+
+                    selectedBet = -1;
+
+                    #ifdef TEST_MODE
+                        printf("n-ai bani boss\n");
+                    #endif
                 }
 
-                selectedBet = i;
+                else
+                {
+                    selectedBet = i;
+
+                    #ifdef TEST_MODE
+                        printf("selected bet: %d\n", availableBets[selectedBet]);
+                    #endif
+                }
+
                 updateBetButtonsUI();
                 glutPostRedisplay();
                 clickedBetButton = 1;
