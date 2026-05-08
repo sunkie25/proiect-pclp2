@@ -27,6 +27,7 @@
 #endif
 
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -573,6 +574,12 @@ void handleSpinButton()
     #endif
 
     if(spinStep > 0) return;
+    if(selectedBet < 0)
+    {
+        showNotification(NOTIFICATION_TYPE_WARNING, "Please select a bet before spinning!");
+        return;
+    }
+
 
     if(cashBalance < availableBets[selectedBet])
     {
@@ -713,7 +720,7 @@ int main(int argc, char** argv)
 {
     loadSlotItemOffsets();
     userLog("New slots session!!!!");
-    
+
     glutInit(&argc, argv);
     glutInitWindowSize(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
 
