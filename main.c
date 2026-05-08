@@ -56,46 +56,25 @@
 #define ITEM_TYPE_ROMB                  (3)
 #define ITEM_TYPE_BAR                   (4)
 
+#define OFFSETS_FILE                    "offsets.txt"
+
 int cashBalance = DEFAULT_CASH_BALANCE;
 
 int availableBets[4] = {5, 10, 50, 100};
-int selectedBet = 2;
+int selectedBet = 3;
 
 int notificationTimerId = 0;
 int notificationType = NOTIFICATION_TYPE_ERROR;
-
-char slotItemTypes[5][2] = {
-    "#", "@", "$", "%", "&"
-};
 
 struct slotItemDesign {
     float startX;
     float startY;
     float endX;
     float endY;
-} slotItemDesigns[15] = {
-    {-0.94f, 0.88f, -0.57f, 0.45f},
-    {-0.94f, 0.435f, -0.57f, -0.02f},
-    {-0.94f, -0.02f, -0.57f, -0.48f},
+} slotItemDesigns[15];
 
-    {-0.565f, 0.88f, -0.195f, 0.45f},
-    {-0.565f, 0.435f, -0.195f, -0.02f},
-    {-0.565f, -0.02f, -0.195f, -0.48f},
-
-    {-0.185f, 0.88f, 0.185f, 0.45f},
-    {-0.185f, 0.435f, 0.185f, -0.02f},
-    {-0.185f, -0.02f, 0.185f, -0.48f},
-
-    {0.195f, 0.88f, 0.575f, 0.45f},
-    {0.195f, 0.435f, 0.575f, -0.02f},
-    {0.195f, -0.02f, 0.575f, -0.48f},
-
-    {0.575f, 0.88f, 0.94f, 0.45f},
-    {0.575f, 0.435f, 0.94f, -0.02f},
-    {0.575f, -0.02f, 0.94f, -0.48f}
-};
-
-int slotItemWon[15];
+int slotItemWon[15], displayedItems[15], finalItems[15];
+int spinStep = 0;
 
 char notificationMessage[64] = "";
 
@@ -209,6 +188,61 @@ void updateBetButtonsUI()
         for(j = 0; j < (int)strlen(betText); j++)
         {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, betText[j]);
+        }
+    }
+}
+
+void updateWonItems()
+{
+    int i = 0, x[15];
+    for(i = 0; i < 15; i++)
+    {
+        slotItemWon[i] = 0;
+        x[i] = finalItems[i];
+    }
+
+    if(x[0] == x[3] && x[3] == x[6] && x[6] != x[9]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = 1;
+    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] != x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = 1;
+    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] == x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = slotItemWon[12] = 1;
+
+    if(x[1] == x[4] && x[4] == x[7] && x[7] != x[10]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = 1;
+    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] != x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = 1;
+    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] == x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = slotItemWon[13] = 1;
+
+    if(x[2] == x[5] && x[5] == x[8] && x[8] != x[11]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = 1;
+    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] != x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = 1;
+    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] == x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = slotItemWon[14] = 1;
+
+    if(x[0] == x[4] && x[4] == x[8] && x[8] != x[10]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = 1;
+    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] != x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = 1;
+    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] == x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = slotItemWon[12] = 1;
+
+    if(x[2] == x[4] && x[4] == x[6] && x[6] != x[10]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = 1;
+    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] != x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = 1;
+    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] == x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = slotItemWon[14] = 1;
+}
+
+void shuffleSlotItems()
+{
+    int i = 0;
+    for(i = 0; i < 15; i++)
+    {
+        slotItemWon[i] = 0;
+        displayedItems[i] = rand() % 5;
+    }
+}
+
+void generateFinalItems()
+{
+    int i = 0;
+    for(i = 0; i < 15; i++)
+    {
+        slotItemWon[i] = 0;
+        finalItems[i] = rand() % 5;
+
+        while(displayedItems[i] == finalItems[i])
+        {
+            displayedItems[i] = rand() % 5;
         }
     }
 }
@@ -335,11 +369,6 @@ void drawSlotItem(int type, float x, float y)
 
 void drawSlotItems()
 {
-    // slotItemWon[0] = 1;
-    // slotItemWon[3] = 1;
-    // slotItemWon[6] = 1;
-    // slotItemWon[9] = 1;
-
     int i = 0, j = 0;
     for(i = 0; i < 3; i++)
     {
@@ -363,9 +392,51 @@ void drawSlotItems()
             glVertex2f(slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].endY);
             glEnd();
 
-            drawSlotItem(rand() % 5, slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].startY);
+            drawSlotItem(displayedItems[i * 5 + j], slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].startY);
         }
     }
+}
+
+void onSpinStop()
+{
+    spinStep = 0;
+
+    #ifdef TEST_MODE
+        printf("\nSPIN STOPPED!!!!");
+    #endif
+
+    updateWonItems();
+    glutPostRedisplay();
+}
+
+void spinTimer()
+{
+    if(spinStep >= 15)
+    {
+        onSpinStop();
+        return;
+    }
+
+    displayedItems[spinStep] = finalItems[spinStep];
+    spinStep++;
+
+    glutPostRedisplay();
+
+    if(spinStep < 15)
+    {
+        glutTimerFunc(300, spinTimer, 0);
+    }
+    else
+    {
+        onSpinStop();
+    }
+}
+
+void handleSpin()
+{
+    if(spinStep > 0) return;
+
+    glutTimerFunc(300, spinTimer, 0);
 }
 
 void drawSlotMachineContainer() 
@@ -382,7 +453,6 @@ void drawSlotMachineContainer()
 	glVertex2f(-0.95f, 0.9f);
 	glEnd();
 
-    // fundal
     // glBegin(GL_QUADS);
 	// glColor3f(0.94f, 0.6f, 0.5f);
 	// glVertex2f(-0.94f, -0.48f);
@@ -452,6 +522,8 @@ void handleSpinButton()
         printf("\nSPIN BUTTON CLICKED!\n");
     #endif
 
+    if(spinStep > 0) return;
+
     if(cashBalance < availableBets[selectedBet])
     {
         showNotification(NOTIFICATION_TYPE_ERROR, "You don't have enough coins to select this bet!");
@@ -465,6 +537,11 @@ void handleSpinButton()
     updateCashBalanceUI();
 
     showNotification(NOTIFICATION_TYPE_SUCCESS, "Spinning the reels... Good luck!");
+    
+    shuffleSlotItems();
+    generateFinalItems();
+
+    handleSpin();
 
     glutPostRedisplay();
 }
@@ -552,8 +629,28 @@ void reshape(int width, int height)
     }
 }
 
+void loadSlotItemOffsets()
+{
+    FILE *f_in = fopen(OFFSETS_FILE, "r");
+    if(f_in == NULL)    
+    {
+        printf("Error opening offsets file!\n");
+        return;
+    }
+
+    int i = 0;
+    while(i < 15 && !feof(f_in))
+    {
+        fscanf(f_in, "%f %f %f %f", &slotItemDesigns[i].startX, &slotItemDesigns[i].startY, &slotItemDesigns[i].endX, &slotItemDesigns[i].endY);
+        i++;
+    }
+    
+    fclose(f_in);
+}
+
 int main(int argc, char** argv) 
 {
+    loadSlotItemOffsets();
     glutInit(&argc, argv);
     glutInitWindowSize(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
 
@@ -566,6 +663,7 @@ int main(int argc, char** argv)
     glutInitWindowPosition(windowPosX, windowPosY);
     glutCreateWindow("Slot Machine");
     glutMouseFunc(onMouse);
+    shuffleSlotItems();
 
     glutDisplayFunc(drawSlotMachineContainer);
     glutReshapeFunc(reshape); 
