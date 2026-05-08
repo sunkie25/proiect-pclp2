@@ -74,27 +74,22 @@ struct slotItemDesign {
     float endX;
     float endY;
 } slotItemDesigns[15] = {
-    // coloana 1
     {-0.94f, 0.88f, -0.57f, 0.45f},
     {-0.94f, 0.435f, -0.57f, -0.02f},
     {-0.94f, -0.02f, -0.57f, -0.48f},
 
-    // coloana 2
     {-0.565f, 0.88f, -0.195f, 0.45f},
     {-0.565f, 0.435f, -0.195f, -0.02f},
     {-0.565f, -0.02f, -0.195f, -0.48f},
 
-    // coloana 3
     {-0.185f, 0.88f, 0.185f, 0.45f},
     {-0.185f, 0.435f, 0.185f, -0.02f},
     {-0.185f, -0.02f, 0.185f, -0.48f},
 
-    // coloana 4
     {0.195f, 0.88f, 0.575f, 0.45f},
     {0.195f, 0.435f, 0.575f, -0.02f},
     {0.195f, -0.02f, 0.575f, -0.48f},
 
-    // coloana 5
     {0.575f, 0.88f, 0.94f, 0.45f},
     {0.575f, 0.435f, 0.94f, -0.02f},
     {0.575f, -0.02f, 0.94f, -0.48f}
@@ -153,23 +148,6 @@ void showNotification(int type, char content[64])
     notificationTimerId++;
     glutTimerFunc(5000, hideNotificationDelayed, notificationTimerId);
     glutPostRedisplay();
-}
-
-void drawCircle(float cx, float cy, float radius, int segments)
-{
-    int i = 0;
-    float angle = 0.0f;
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex2f(cx, cy);
-
-    for(i = 0; i <= segments; i++)
-    {
-        angle = 2.0f * 3.14159f * i / segments;
-        glVertex2f(cx + cos(angle) * radius, cy + sin(angle) * radius);
-    }
-
-    glEnd();
 }
 
 void updateCashBalanceUI()
