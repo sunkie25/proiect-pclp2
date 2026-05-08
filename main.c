@@ -33,7 +33,7 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
-#define TEST_MODE
+// #define TEST_MODE
 
 #define NOTIFICATION_TYPE_ERROR         (0)
 #define NOTIFICATION_TYPE_SUCCESS       (1)
@@ -56,7 +56,10 @@
 #define ITEM_TYPE_ROMB                  (3)
 #define ITEM_TYPE_BAR                   (4)
 
+#define SPIN_TIMER_DELAY                (150)
+
 #define OFFSETS_FILE                    "offsets.txt"
+#define LOGS_FILE                       "logs.txt"
 
 int cashBalance = DEFAULT_CASH_BALANCE;
 
@@ -65,6 +68,9 @@ int selectedBet = 3;
 
 int notificationTimerId = 0;
 int notificationType = NOTIFICATION_TYPE_ERROR;
+
+int slotItemWinMultipliers[5] = {10, 2, 5, 7, 4};
+int lineWinMultiplier[3] = {1, 5, 10};
 
 struct slotItemDesign {
     float startX;
@@ -75,8 +81,18 @@ struct slotItemDesign {
 
 int slotItemWon[15], displayedItems[15], finalItems[15];
 int spinStep = 0;
+int slotWinAmount = 0, lastBetAmount = 0;
 
 char notificationMessage[64] = "";
+
+void userLog(char message[128])
+{
+    FILE *logFile = fopen(LOGS_FILE, "a");
+    if(logFile == NULL) return;
+
+    fprintf(logFile, "%s\n", message);
+    fclose(logFile);
+}
 
 void createNotificationText()
 {
@@ -201,25 +217,38 @@ void updateWonItems()
         x[i] = finalItems[i];
     }
 
-    if(x[0] == x[3] && x[3] == x[6] && x[6] != x[9]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = 1;
-    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] != x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = 1;
-    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] == x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = slotItemWon[12] = 1;
+    slotWinAmount = 0;
+    int lineCombos[5] = {0, 0, 0, 0, 0};
 
-    if(x[1] == x[4] && x[4] == x[7] && x[7] != x[10]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = 1;
-    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] != x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = 1;
-    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] == x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = slotItemWon[13] = 1;
+    int lineItems[5] = {x[0], x[1], x[2], x[0], x[2]};
 
-    if(x[2] == x[5] && x[5] == x[8] && x[8] != x[11]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = 1;
-    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] != x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = 1;
-    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] == x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = slotItemWon[14] = 1;
+    if(x[0] == x[3] && x[3] == x[6] && x[6] != x[9]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = 1, lineCombos[0] = 3;
+    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] != x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = 1, lineCombos[0] = 4;
+    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] == x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = slotItemWon[12] = 1, lineCombos[0] = 5;
 
-    if(x[0] == x[4] && x[4] == x[8] && x[8] != x[10]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = 1;
-    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] != x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = 1;
-    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] == x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = slotItemWon[12] = 1;
+    if(x[1] == x[4] && x[4] == x[7] && x[7] != x[10]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = 1, lineCombos[1] = 3;
+    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] != x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = 1, lineCombos[1] = 4;
+    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] == x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = slotItemWon[13] = 1, lineCombos[1] = 5;
 
-    if(x[2] == x[4] && x[4] == x[6] && x[6] != x[10]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = 1;
-    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] != x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = 1;
-    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] == x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = slotItemWon[14] = 1;
+    if(x[2] == x[5] && x[5] == x[8] && x[8] != x[11]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = 1, lineCombos[2] = 3;
+    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] != x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = 1, lineCombos[2] = 4;
+    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] == x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = slotItemWon[14] = 1, lineCombos[2] = 5;
+
+    if(x[0] == x[4] && x[4] == x[8] && x[8] != x[10]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = 1, lineCombos[3] = 3;
+    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] != x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = 1, lineCombos[3] = 4;
+    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] == x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = slotItemWon[12] = 1, lineCombos[3] = 5;
+
+    if(x[2] == x[4] && x[4] == x[6] && x[6] != x[10]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = 1, lineCombos[4] = 3;
+    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] != x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = 1, lineCombos[4] = 4;
+    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] == x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = slotItemWon[14] = 1, lineCombos[4] = 5;
+    
+    for(i = 0; i < 5; i++)
+    {
+        if(lineCombos[i] >= 3)
+        {
+            slotWinAmount += lastBetAmount * slotItemWinMultipliers[lineItems[i]] * lineWinMultiplier[lineCombos[i] - 3];
+        }
+    }
 }
 
 void shuffleSlotItems()
@@ -407,6 +436,27 @@ void onSpinStop()
 
     updateWonItems();
     glutPostRedisplay();
+
+    char message[64];
+    if(slotWinAmount > 0)
+    {
+        sprintf(message, "(+) You won %d coins!", slotWinAmount);
+        showNotification(NOTIFICATION_TYPE_SUCCESS, message);
+        cashBalance += slotWinAmount;
+        updateCashBalanceUI();
+
+        sprintf(message, "[WIN] +%d coins (bet: %d, new balance: %d)", slotWinAmount, availableBets[selectedBet], cashBalance);
+        userLog(message);
+    }
+
+    else
+    {
+        sprintf(message, "(-) You lost %d coins!", availableBets[selectedBet]);
+        showNotification(NOTIFICATION_TYPE_ERROR, message);
+
+        sprintf(message, "[LOSE] -%d coins (bet: %d, new balance: %d)", availableBets[selectedBet], availableBets[selectedBet], cashBalance);
+        userLog(message);
+    }
 }
 
 void spinTimer()
@@ -424,7 +474,7 @@ void spinTimer()
 
     if(spinStep < 15)
     {
-        glutTimerFunc(300, spinTimer, 0);
+        glutTimerFunc(SPIN_TIMER_DELAY, spinTimer, 0);
     }
     else
     {
@@ -436,7 +486,7 @@ void handleSpin()
 {
     if(spinStep > 0) return;
 
-    glutTimerFunc(300, spinTimer, 0);
+    glutTimerFunc(SPIN_TIMER_DELAY, spinTimer, 0);
 }
 
 void drawSlotMachineContainer() 
@@ -534,6 +584,7 @@ void handleSpinButton()
     }
 
     cashBalance -= availableBets[selectedBet];
+    lastBetAmount = availableBets[selectedBet];
     updateCashBalanceUI();
 
     showNotification(NOTIFICATION_TYPE_SUCCESS, "Spinning the reels... Good luck!");
@@ -575,6 +626,12 @@ void onMouse(int button, int state, int x, int y)
                 #ifdef TEST_MODE
                     printf("Clicked BET button %d\n", i);
                 #endif
+
+                if(spinStep > 0)
+                {
+                    showNotification(NOTIFICATION_TYPE_WARNING, "You can't change your bet while the reels are spinning!");
+                    return;
+                }
 
                 if(cashBalance < availableBets[i])
                 {
@@ -655,6 +712,8 @@ void loadSlotItemOffsets()
 int main(int argc, char** argv) 
 {
     loadSlotItemOffsets();
+    userLog("New slots session!!!!");
+    
     glutInit(&argc, argv);
     glutInitWindowSize(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
 
