@@ -572,7 +572,9 @@ void onMouse(int button, int state, int x, int y)
 
             if(x >= x1 && x <= x2 && y >= y1 && y <= y2)
             {
-                printf("Clicked BET button %d\n", i);
+                #ifdef TEST_MODE
+                    printf("Clicked BET button %d\n", i);
+                #endif
 
                 if(cashBalance < availableBets[i])
                 {
@@ -601,7 +603,9 @@ void onMouse(int button, int state, int x, int y)
             }
         }
 
-        printf("\nclick la %d %d\n", x, y);
+        #ifdef TEST_MODE
+            printf("\nclick la %d %d\n", x, y);
+        #endif
 
         if(!clickedBetButton)
         {
@@ -644,7 +648,7 @@ void loadSlotItemOffsets()
         fscanf(f_in, "%f %f %f %f", &slotItemDesigns[i].startX, &slotItemDesigns[i].startY, &slotItemDesigns[i].endX, &slotItemDesigns[i].endY);
         i++;
     }
-    
+
     fclose(f_in);
 }
 
