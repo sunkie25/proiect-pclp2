@@ -3,13 +3,23 @@
 
     12.04.2026 (in gand, ca de apucat [serios] m-am apucat pe 27.04.2026 😤)
 
-    pacanele 3x5 ca nu suntem lenesi sa facem doar 3x3
-    - 5 linii, cine sta sa faca 20 lmao
-    - toate combinatiile posibile de linii sunt incarcate din .txt sa nu mai umplu memoria cu gunoaie degeaba
-    - 1 si 0 folosit pt fiecare combinatie posibila (1 e win, 0 e lose)
-    - fiecare element are plati diferite
-    - pornesti cu 10000 balanta
-    - poti juca 4 mize: 5, 10, 50, 100
+    așa-i că esti curios ce scria aici?? 😉
+    de ce citesti???
+    
+    
+    incă nu esti curios de cod?
+
+
+
+
+    scria mai sus ce face codul dar nu avem voie cu comentarii despre cod 😤😤😤
+
+
+
+
+
+
+    cel mai smecher proiect!!!
 */
 
 #ifdef _WIN32
