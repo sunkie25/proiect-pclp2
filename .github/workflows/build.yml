@@ -27,7 +27,7 @@ jobs:
 
     - name: Compile (Windows)
       if: matrix.os == 'windows-latest'
-      run: gcc main.c -o main-windows.exe -IC:/vcpkg/installed/x64-windows/include -LC:/vcpkg/installed/x64-windows/lib -lfreeglut -lopengl32 -lglu32
+      run: gcc main.c -o main.exe -IC:/vcpkg/installed/x64-windows/include -LC:/vcpkg/installed/x64-windows/lib -lfreeglut -lopengl32 -lglu32
 
     - name: Copy GLUT DLL (Windows)
       if: matrix.os == 'windows-latest'
@@ -35,13 +35,25 @@ jobs:
 
     - name: Compile (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: gcc main.c -o main-linux -lGL -lGLU -lglut
+      run: gcc main.c -o main -lGL -lGLU -lglut
+
+    - name: Package (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        New-Item -ItemType Directory -Force package
+        Copy-Item main.exe package/
+        Copy-Item freeglut.dll package/
+        Copy-Item offsets.txt package/
+
+    - name: Package (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir -p package
+        cp main offsets.txt package/
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: executabile-${{ matrix.os }}
-        path: |
-          main-windows.exe
-          main-linux
-          freeglut.dll
+        path: package/*
+        if-no-files-found: error
