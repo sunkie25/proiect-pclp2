@@ -34,7 +34,7 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
-// #define TEST_MODE
+#define TEST_MODE
 
 #define NOTIFICATION_TYPE_ERROR         (0)
 #define NOTIFICATION_TYPE_SUCCESS       (1)
@@ -104,7 +104,7 @@ void loadTheme()
     FILE *f_in = fopen(THEME_FILE, "r");
     if(f_in == NULL)    
     {
-        printf("Error opening theme file!\n");
+        printf("No theme file found!\n");
         return;
     }
 
@@ -112,7 +112,7 @@ void loadTheme()
     fclose(f_in);
 }
 
-void saveTheme(int theme)
+void saveTheme()
 {
     FILE *f_out = fopen(THEME_FILE, "w");
     if(f_out == NULL)
@@ -121,7 +121,7 @@ void saveTheme(int theme)
         return;
     }
 
-    fprintf(f_out, "%d", theme);
+    fprintf(f_out, "%d", themePicked);
     fclose(f_out);
 }
 
@@ -184,7 +184,7 @@ void updateCashBalanceUI()
     sprintf(balanceText, "BALANCE:");
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
     else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
     
     glRasterPos2f(-0.95f, -0.65f);
 
@@ -198,7 +198,7 @@ void updateCashBalanceUI()
 
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
     else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
 
     glRasterPos2f(-0.95f, -0.75f);
 
@@ -219,15 +219,15 @@ void updateBetButtonsUI()
         if(selectedBet == i)
         {
             if(themePicked == 0) glColor3f(0.0f, 0.92f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.0f, 0.92f, 0.0f);
-            else if(themePicked == 2) glColor3f(0.0f, 0.92f, 0.0f);
+            else if(themePicked == 1) glColor3f(0.02f, 0.45f, 0.31f);
+            else if(themePicked == 2) glColor3f(0.81f, 0.2f, 0.4f);
         }
 
         else
         {
             if(themePicked == 0) glColor3f(0.7f, 0.02f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.7f, 0.02f, 0.0f);
-            else if(themePicked == 2) glColor3f(0.7f, 0.02f, 0.0f);
+            else if(themePicked == 1) glColor3f(0.7f, 0.08f, 0.16f);
+            else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
         }
 
         glVertex2f(-0.65f + i * 0.3f + 0.1f, -0.80f);
@@ -240,7 +240,7 @@ void updateBetButtonsUI()
         sprintf(betText, "BET %d", availableBets[i]);
 
         if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-        else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
+        else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
         else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
 
         glRasterPos2f(-0.5f + (i * 0.3f), -0.72f);
@@ -332,7 +332,7 @@ void drawSlotItem(int type, float x, float y)
             glBegin(GL_QUADS);
             
             if(themePicked == 0) glColor3f(1.0f, 0.0f, 0.0f);
-            else if(themePicked == 1) glColor3f(1.0f, 0.0f, 0.0f);
+            else if(themePicked == 1) glColor3f(0.09f, 0.36f, 0.095f);
             else if(themePicked == 2) glColor3f(1.0f, 0.0f, 0.0f);
 
             glVertex2f(x + 0.1f, y - 0.08f);
@@ -344,7 +344,7 @@ void drawSlotItem(int type, float x, float y)
             glBegin(GL_QUADS);
 
             if(themePicked == 0) glColor3f(1.0f, 0.0f, 0.0f);
-            else if(themePicked == 1) glColor3f(1.0f, 0.0f, 0.0f);
+            else if(themePicked == 1) glColor3f(0.09f, 0.36f, 0.095f);
             else if(themePicked == 2) glColor3f(1.0f, 0.0f, 0.0f);
 
             glVertex2f(x + 0.255f, y - 0.11f);
@@ -363,7 +363,7 @@ void drawSlotItem(int type, float x, float y)
                 glBegin(GL_QUADS);
                 
                 if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-                else if(themePicked == 1) glColor3f(0.0f, 0.8f, 0.1f);
+                else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
                 else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
 
                 glVertex2f(x + 0.1f, y - 0.08f - i * 0.11f);
@@ -376,7 +376,7 @@ void drawSlotItem(int type, float x, float y)
             glBegin(GL_QUADS);
 
             if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-            else if(themePicked == 1) glColor3f(0.0f, 0.8f, 0.1f);
+            else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
             else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
 
             glVertex2f(x + 0.1f, y - 0.08f);
@@ -388,7 +388,7 @@ void drawSlotItem(int type, float x, float y)
             glBegin(GL_QUADS);
 
             if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-            else if(themePicked == 1) glColor3f(0.0f, 0.8f, 0.1f);
+            else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
             else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
 
             glVertex2f(x + 0.23f, y - 0.20f);
@@ -400,7 +400,7 @@ void drawSlotItem(int type, float x, float y)
             glBegin(GL_QUADS);
 
             if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-            else if(themePicked == 1) glColor3f(0.0f, 0.8f, 0.1f);
+            else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
             else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
 
             glVertex2f(x + 0.17f, y - 0.05f);
@@ -416,7 +416,7 @@ void drawSlotItem(int type, float x, float y)
             glBegin(GL_TRIANGLES);
 
             if(themePicked == 0) glColor3f(0.2f, 0.6f, 0.9f);
-            else if(themePicked == 1) glColor3f(0.2f, 0.6f, 0.9f);
+            else if(themePicked == 1) glColor3f(0.7f, 0.12f, 0.27f);
             else if(themePicked == 2) glColor3f(0.2f, 0.6f, 0.9f);
 
             glVertex2f(x + 0.175f, y - 0.33f);
@@ -427,7 +427,7 @@ void drawSlotItem(int type, float x, float y)
             glBegin(GL_POLYGON);
 
             if(themePicked == 0) glColor3f(0.2f, 0.6f, 0.9f);
-            else if(themePicked == 1) glColor3f(0.2f, 0.6f, 0.9f);
+            else if(themePicked == 1) glColor3f(0.7f, 0.12f, 0.27f);
             else if(themePicked == 2) glColor3f(0.2f, 0.6f, 0.9f);
 
             glVertex2f(x + 0.1f, y - 0.13f);
@@ -442,8 +442,8 @@ void drawSlotItem(int type, float x, float y)
         {
             glBegin(GL_POLYGON);
             if(themePicked == 0) glColor3f(0.9f, 0.1f, 0.9f);
-            else if(themePicked == 1) glColor3f(0.9f, 0.1f, 0.9f);
-            else if(themePicked == 2) glColor3f(0.9f, 0.1f, 0.9f);
+            else if(themePicked == 1) glColor3f(0.97f, 0.6f, 0.03f);
+            else if(themePicked == 2) glColor3f(0.97f, 0.1f, 0.51f);
             glVertex2f(x + 0.175f, y - 0.10f);
             glVertex2f(x + 0.125f, y - 0.22f);
             glVertex2f(x + 0.175f, y - 0.34f);
@@ -456,7 +456,7 @@ void drawSlotItem(int type, float x, float y)
         {
             glBegin(GL_QUADS);
             if(themePicked == 0) glColor3f(1.0f, 0.8f, 0.0f);
-            else if(themePicked == 1) glColor3f(1.0f, 0.8f, 0.0f);
+            else if(themePicked == 1) glColor3f(0.7f, 0.8f, 0.0f);
             else if(themePicked == 2) glColor3f(1.0f, 0.8f, 0.0f);
             glVertex2f(x + 0.10f, y - 0.1f);
             glVertex2f(x + 0.255f, y - 0.1f);
@@ -490,14 +490,14 @@ void drawSlotItems()
             {
                 if(themePicked == 0) glColor3f(0.0f, 0.92f, 0.0f);
                 else if(themePicked == 1) glColor3f(0.0f, 0.92f, 0.0f);
-                else if(themePicked == 2) glColor3f(0.0f, 0.92f, 0.0f);
+                else if(themePicked == 2) glColor3f(0.4f, 0.8f, 0.56f);
             }
 
             else
             {
                 if(themePicked == 0) glColor3f(0.94f, 0.6f, 0.5f);
-                else if(themePicked == 1) glColor3f(0.94f, 0.6f, 0.5f);
-                else if(themePicked == 2) glColor3f(0.94f, 0.6f, 0.5f);
+                else if(themePicked == 1) glColor3f(0.999f, 0.764f, 0.5f);
+                else if(themePicked == 2) glColor3f(0.8f, 0.33f, 0.64f);
             }
 
             glVertex2f(slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].startY);
@@ -579,16 +579,16 @@ void drawSlotMachineContainer()
     int i = 0;
     
     if(themePicked == 0) glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    else if(themePicked == 1) glClearColor(0.65f, 0.05f, 0.05f, 1.0f);
-    else if(themePicked == 2) glClearColor(0.9f, 0.9f, 0.9f, 1.0f);
+    else if(themePicked == 1) glClearColor(0.66f, 0.89f, 0.898f, 1.0f);
+    else if(themePicked == 2) glClearColor(0.32f, 0.18f, 0.5f, 1.0f);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	
     glBegin(GL_QUADS);
     
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.1f, 0.05f, 0.05f);
+    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
 
 	glVertex2f(-0.95f, -0.5f);
 	glVertex2f( 0.95f, -0.5f);
@@ -610,7 +610,7 @@ void drawSlotMachineContainer()
 
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
     else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
 
     glVertex2f(-0.95f, 0.45f);
     glVertex2f(0.95f, 0.45f);
@@ -622,7 +622,7 @@ void drawSlotMachineContainer()
 
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
     else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
     
     glVertex2f(-0.95f, -0.02f);
     glVertex2f(0.95f, -0.02f);
@@ -636,7 +636,7 @@ void drawSlotMachineContainer()
 
         if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
         else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-        else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+        else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
 
         glVertex2f(-0.575f + i * 0.38f, -0.5f);
         glVertex2f(-0.575f + i * 0.38f + 0.01f, -0.5f);
@@ -648,8 +648,8 @@ void drawSlotMachineContainer()
     glBegin(GL_QUADS);
 
     if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.05f, 0.92f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.05f, 0.92f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.015f, 0.45f, 0.32f);
+    else if(themePicked == 2) glColor3f(1.0f, 0.45f, 0.75f);
     
     glVertex2f(0.65f, -0.80f);
     glVertex2f(0.9f, -0.80f);
@@ -662,7 +662,7 @@ void drawSlotMachineContainer()
     updateBetButtonsUI();
 
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
     else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
 
     glRasterPos2f(0.735f, -0.72f);
@@ -675,7 +675,7 @@ void drawSlotMachineContainer()
 
     glBegin(GL_QUADS);
     if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.05f, 0.92f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.015f, 0.45f, 0.32f);
     else if(themePicked == 2) glColor3f(0.05f, 0.92f, 0.0f);
 
     glVertex2f(-0.94f, -0.87f);
@@ -685,7 +685,7 @@ void drawSlotMachineContainer()
     glEnd();
 
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
     else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
 
     glRasterPos2f(-0.92f, -0.85f);
@@ -735,6 +735,15 @@ void handleSpinButton()
 
     handleSpin();
 
+    glutPostRedisplay();
+}
+
+void handleThemeButton()
+{
+    if(themePicked < MAX_THEMES - 1) themePicked++;
+    else themePicked = 0;
+
+    saveTheme();
     glutPostRedisplay();
 }
 
@@ -807,6 +816,7 @@ void onMouse(int button, int state, int x, int y)
 
         if(!clickedBetButton)
         {
+            int action = 0;
             x1 = 950;
             x2 = 1093;
             y1 = 510;
@@ -818,6 +828,24 @@ void onMouse(int button, int state, int x, int y)
             if(x >= x1 && x <= x2 && y >= y1 && y <= y2)
             {
                 handleSpinButton();
+                action = 1;
+            }
+
+            if(!action)
+            {
+                x1 = 35;
+                x2 = 102;
+                y1 = 576;
+                y2 = 697;
+
+                if(x1 > x2) { temp = x1; x1 = x2; x2 = temp; }
+                if(y1 > y2) { temp = y1; y1 = y2; y2 = temp; }
+
+                if(x >= x1 && x <= x2 && y >= y1 && y <= y2)
+                {
+                    handleThemeButton();
+                    action = 1;
+                }
             }
         }
     }
