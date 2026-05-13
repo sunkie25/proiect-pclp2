@@ -544,8 +544,10 @@ void onSpinStop()
     }
 }
 
-void spinTimer()
+void spinTimer(int value)
 {
+    value = 0; // unused parameter
+    
     if(spinStep >= 15)
     {
         onSpinStop();
