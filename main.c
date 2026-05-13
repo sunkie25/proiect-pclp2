@@ -73,16 +73,6 @@ int selectedBet = 3;
 int notificationTimerId = 0;
 int notificationType = NOTIFICATION_TYPE_ERROR;
 
-int slotItemWinMultipliers[5] = {10, 2, 5, 7, 4};
-int lineWinMultiplier[3] = {1, 5, 10};
-
-struct slotItemDesign {
-    float startX;
-    float startY;
-    float endX;
-    float endY;
-} slotItemDesigns[15];
-
 int slotItemWon[15], displayedItems[15], finalItems[15];
 int spinStep = 0;
 int slotWinAmount = 0, lastBetAmount = 0;
@@ -286,6 +276,10 @@ void updateWonItems()
     else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] != x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = 1, lineCombos[4] = 4;
     else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] == x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = slotItemWon[14] = 1, lineCombos[4] = 5;
     
+
+    int slotItemWinMultipliers[5] = {10, 2, 5, 7, 4};
+    int lineWinMultiplier[3] = {1, 5, 10};
+
     for(i = 0; i < 5; i++)
     {
         if(lineCombos[i] >= 3)
@@ -479,7 +473,29 @@ void drawSlotItem(int type, float x, float y)
 
 void drawSlotItems()
 {
+    struct slotItemDesign {
+        float startX;
+        float startY;
+        float endX;
+        float endY;
+    } slotItemDesigns[15];
+
     int i = 0, j = 0;
+    FILE *f_in = fopen(OFFSETS_FILE, "r");
+    if(f_in == NULL)    
+    {
+        printf("Error opening offsets file!\n");
+        return;
+    }
+
+    while(i < 15 && !feof(f_in))
+    {
+        fscanf(f_in, "%f %f %f %f", &slotItemDesigns[i].startX, &slotItemDesigns[i].startY, &slotItemDesigns[i].endX, &slotItemDesigns[i].endY);
+        i++;
+    }
+
+    fclose(f_in);
+
     for(i = 0; i < 3; i++)
     {
         for(j = 0; j < 5; j++)
@@ -536,10 +552,10 @@ void onSpinStop()
 
     else
     {
-        sprintf(message, "(-) You lost %d coins!", availableBets[selectedBet]);
+        sprintf(message, "(-) You lost %d coins!", lastBetAmount);
         showNotification(NOTIFICATION_TYPE_ERROR, message);
 
-        sprintf(message, "[LOSE] -%d coins (bet: %d, new balance: %d)", availableBets[selectedBet], availableBets[selectedBet], cashBalance);
+        sprintf(message, "[LOSE] -%d coins (bet: %d, new balance: %d)", lastBetAmount, availableBets[selectedBet], cashBalance);
         userLog(message);
     }
 }
@@ -861,28 +877,8 @@ void reshape(int width, int height)
     }
 }
 
-void loadSlotItemOffsets()
-{
-    FILE *f_in = fopen(OFFSETS_FILE, "r");
-    if(f_in == NULL)    
-    {
-        printf("Error opening offsets file!\n");
-        return;
-    }
-
-    int i = 0;
-    while(i < 15 && !feof(f_in))
-    {
-        fscanf(f_in, "%f %f %f %f", &slotItemDesigns[i].startX, &slotItemDesigns[i].startY, &slotItemDesigns[i].endX, &slotItemDesigns[i].endY);
-        i++;
-    }
-
-    fclose(f_in);
-}
-
 int main(int argc, char** argv) 
 {
-    loadSlotItemOffsets();
     loadTheme();
     userLog("New slots session!!!!");
 
