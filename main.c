@@ -90,7 +90,7 @@ int themePicked = 1;
 
 char notificationMessage[64] = "";
 
-void userLog(char message[128])
+void userLog(const char *message)
 {
     FILE *logFile = fopen(LOGS_FILE, "a");
     if(logFile == NULL) return;
@@ -167,7 +167,7 @@ void hideNotificationDelayed(int value)
     }
 }
 
-void showNotification(int type, char content[64])
+void showNotification(int type, const char *content)
 {
     strcpy(notificationMessage, content);
     notificationType = type;
@@ -546,8 +546,8 @@ void onSpinStop()
 
 void spinTimer(int value)
 {
-    value = 0; // unused parameter
-    
+    (void)value;
+
     if(spinStep >= 15)
     {
         onSpinStop();
