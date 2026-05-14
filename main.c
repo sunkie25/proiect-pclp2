@@ -592,16 +592,8 @@ void handleSpin()
     glutTimerFunc(SPIN_TIMER_DELAY, spinTimer, 0);
 }
 
-void drawSlotMachineContainer() 
+void drawSlotMachineContainerOutline()
 {
-    int i = 0;
-    
-    if(themePicked == 0) glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    else if(themePicked == 1) glClearColor(0.66f, 0.89f, 0.898f, 1.0f);
-    else if(themePicked == 2) glClearColor(0.32f, 0.18f, 0.5f, 1.0f);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-	
     glBegin(GL_QUADS);
     
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
@@ -613,17 +605,11 @@ void drawSlotMachineContainer()
 	glVertex2f( 0.95f, 0.9f);
 	glVertex2f(-0.95f, 0.9f);
 	glEnd();
+}
 
-    // glBegin(GL_QUADS);
-	// glColor3f(0.94f, 0.6f, 0.5f);
-	// glVertex2f(-0.94f, -0.48f);
-	// glVertex2f( 0.94f, -0.48f);
-	// glVertex2f( 0.94f, 0.88f);
-	// glVertex2f(-0.94f, 0.88f);
-	// glEnd();
-
-    drawSlotItems();
-
+void drawSlotMachineRows()
+{
+    int i = 0;
     glBegin(GL_QUADS);
 
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
@@ -662,7 +648,10 @@ void drawSlotMachineContainer()
         glVertex2f(-0.575f + i * 0.38f, 0.9f);
         glEnd();
     }
+}
 
+void drawSlotSpinButton()
+{
     glBegin(GL_QUADS);
 
     if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
@@ -675,10 +664,6 @@ void drawSlotMachineContainer()
     glVertex2f(0.65f, -0.60f);
     glEnd();
 
-    updateCashBalanceUI();
-
-    updateBetButtonsUI();
-
     if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
     else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
     else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
@@ -686,11 +671,14 @@ void drawSlotMachineContainer()
     glRasterPos2f(0.735f, -0.72f);
 
     char tempText[7] = "SPIN";
-    for(i = 0; i < (int)strlen(tempText); i++)
+    for(int i = 0; i < (int)strlen(tempText); i++)
     {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, tempText[i]);
     }
+}
 
+void drawThemeButton()
+{
     glBegin(GL_QUADS);
     if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
     else if(themePicked == 1) glColor3f(0.015f, 0.45f, 0.32f);
@@ -707,12 +695,34 @@ void drawSlotMachineContainer()
     else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
 
     glRasterPos2f(-0.92f, -0.85f);
-    strcpy(tempText, "THEME");
-
-    for(i = 0; i < (int)strlen(tempText); i++)
+    char tempText[6] = "THEME";
+    for(int i = 0; i < (int)strlen(tempText); i++)
     {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, tempText[i]);
     }
+}
+
+void drawSlotMachineContainer() 
+{
+    if(themePicked == 0) glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    else if(themePicked == 1) glClearColor(0.66f, 0.89f, 0.898f, 1.0f);
+    else if(themePicked == 2) glClearColor(0.32f, 0.18f, 0.5f, 1.0f);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+    drawSlotMachineContainerOutline();
+
+    drawSlotItems();
+
+    drawSlotMachineRows();
+
+    drawSlotSpinButton();
+
+    updateCashBalanceUI();
+
+    updateBetButtonsUI();
+
+    drawThemeButton();
     
     createNotificationText();
 
