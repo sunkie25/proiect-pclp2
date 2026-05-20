@@ -16,8 +16,6 @@ Jucatorul are la dispozitie 4 mize:
 | BET 50 | 50 coins |
 | BET 100 | 100 coins |
 
-In cod este activat `TEST_MODE`, deci soldul initial folosit la rulare este `500 coins`. Daca se dezactiveaza `TEST_MODE`, soldul initial devine `10000 coins`.
-
 ## 2. Elemente principale ale jocului
 
 Interfata este formata din zona principala a slotului, butoanele de miza, butonul `SPIN`, butonul `THEME`, soldul jucatorului si zona de notificari. Notificarile sunt folosite pentru mesaje precum castig, pierdere, fonduri insuficiente sau incercarea de a schimba miza in timpul rotirii.
