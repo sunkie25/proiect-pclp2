@@ -33,8 +33,6 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
-#define TEST_MODE
-
 #define NOTIFICATION_TYPE_ERROR         (0)
 #define NOTIFICATION_TYPE_SUCCESS       (1)
 #define NOTIFICATION_TYPE_WARNING       (2)
