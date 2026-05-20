@@ -29,7 +29,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 
 #include <GL/glut.h>
 #include <GL/freeglut.h>
@@ -49,7 +48,14 @@
 #define DEFAULT_CASH_BALANCE            (10000)
 #endif
 
-#define DEFAULT_BET                     (5)
+#define DEFAULT_SELECTED_BET_INDEX      (3)
+
+#define BET_BUTTON_COUNT                (4)
+#define SLOT_GRID_ROWS                  (3)
+#define SLOT_GRID_COLUMNS               (5)
+#define SLOT_ITEM_COUNT                 (15)
+#define SLOT_LINE_COUNT                 (5)
+#define ITEM_TYPE_COUNT                 (5)
 
 #define ITEM_TYPE_TEST                  (0)
 #define ITEM_TYPE_CASH                  (1)
@@ -65,508 +71,610 @@
 #define LOGS_FILE                       "logs.txt"
 #define THEME_FILE                      "theme.txt"
 
+typedef struct SlotItemDesign {
+    float startX;
+    float startY;
+    float endX;
+    float endY;
+} SlotItemDesign;
+
+typedef struct ButtonBounds {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+} ButtonBounds;
+
 int cashBalance = DEFAULT_CASH_BALANCE;
 
-int availableBets[4] = {5, 10, 50, 100};
-int selectedBet = 3;
+const int availableBets[BET_BUTTON_COUNT] = {5, 10, 50, 100};
+int selectedBet = DEFAULT_SELECTED_BET_INDEX;
 
 int notificationTimerId = 0;
 int notificationType = NOTIFICATION_TYPE_ERROR;
 
-int slotItemWon[15], displayedItems[15], finalItems[15];
+int slotItemWon[SLOT_ITEM_COUNT], displayedItems[SLOT_ITEM_COUNT], finalItems[SLOT_ITEM_COUNT];
 int spinStep = 0;
 int slotWinAmount = 0, lastBetAmount = 0;
 int themePicked = 1;
 
 char notificationMessage[64] = "";
 
-void userLog(const char *message)
+void appendLogMessage(const char *message)
 {
-    FILE *logFile = fopen(LOGS_FILE, "a");
+    FILE *logFile;
+
+    logFile = fopen(LOGS_FILE, "a");
     if(logFile == NULL) return;
 
     fprintf(logFile, "%s\n", message);
     fclose(logFile);
 }
 
-void loadTheme()
+void loadSavedTheme()
 {
-    FILE *f_in = fopen(THEME_FILE, "r");
-    if(f_in == NULL)    
+    FILE *themeFile;
+
+    themeFile = fopen(THEME_FILE, "r");
+    if(themeFile == NULL)
     {
         printf("No theme file found!\n");
         return;
     }
 
-    fscanf(f_in, "%d", &themePicked);
-    fclose(f_in);
+    fscanf(themeFile, "%d", &themePicked);
+    fclose(themeFile);
 }
 
-void saveTheme()
+void saveSelectedTheme()
 {
-    FILE *f_out = fopen(THEME_FILE, "w");
-    if(f_out == NULL)
+    FILE *themeFile;
+
+    themeFile = fopen(THEME_FILE, "w");
+    if(themeFile == NULL)
     {
         printf("Error opening theme file for writing!\n");
         return;
     }
 
-    fprintf(f_out, "%d", themePicked);
-    fclose(f_out);
+    fprintf(themeFile, "%d", themePicked);
+    fclose(themeFile);
 }
 
-void createNotificationText()
+void drawText(float x, float y, void *font, const char *text)
 {
-    int i = 0;
-    if(strlen(notificationMessage) == 0) return;
+    int i;
+    int textLength;
 
+    textLength = (int)strlen(text);
+    glRasterPos2f(x, y);
+
+    for(i = 0; i < textLength; i++)
+    {
+        glutBitmapCharacter(font, text[i]);
+    }
+}
+
+void drawFilledRectangle(float left, float bottom, float right, float top)
+{
+    glBegin(GL_QUADS);
+    glVertex2f(left, bottom);
+    glVertex2f(right, bottom);
+    glVertex2f(right, top);
+    glVertex2f(left, top);
+    glEnd();
+}
+
+void setNotificationColor()
+{
     if(notificationType == NOTIFICATION_TYPE_ERROR)
     {
         glColor3f(1.0f, 0.0f, 0.0f);
     }
-
     else if(notificationType == NOTIFICATION_TYPE_SUCCESS)
     {
         glColor3f(0.0f, 0.8f, 0.0f);
     }
-
     else if(notificationType == NOTIFICATION_TYPE_WARNING)
     {
         glColor3f(1.0f, 0.65f, 0.0f);
     }
+}
 
-    glRasterPos2f(-0.95f, -0.95f);
+void setBalanceTextColor()
+{
+    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
+}
 
-    for(i = 0; i < (int)strlen(notificationMessage); i++)
+void setBetButtonFillColor(int isSelected)
+{
+    if(isSelected)
     {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, notificationMessage[i]);
+        if(themePicked == 0) glColor3f(0.0f, 0.92f, 0.0f);
+        else if(themePicked == 1) glColor3f(0.02f, 0.45f, 0.31f);
+        else if(themePicked == 2) glColor3f(0.81f, 0.2f, 0.4f);
+    }
+    else
+    {
+        if(themePicked == 0) glColor3f(0.7f, 0.02f, 0.0f);
+        else if(themePicked == 1) glColor3f(0.7f, 0.08f, 0.16f);
+        else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
     }
 }
 
-void hideNotification()
+void setBetButtonTextColor()
+{
+    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
+    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+}
+
+void setSlotCellBackgroundColor(int isWinningCell)
+{
+    if(isWinningCell)
+    {
+        if(themePicked == 0) glColor3f(0.0f, 0.92f, 0.0f);
+        else if(themePicked == 1) glColor3f(0.0f, 0.92f, 0.0f);
+        else if(themePicked == 2) glColor3f(0.4f, 0.8f, 0.56f);
+    }
+    else
+    {
+        if(themePicked == 0) glColor3f(0.94f, 0.6f, 0.5f);
+        else if(themePicked == 1) glColor3f(0.999f, 0.764f, 0.5f);
+        else if(themePicked == 2) glColor3f(0.8f, 0.33f, 0.64f);
+    }
+}
+
+void setMachineFrameColor()
+{
+    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.1f, 0.05f, 0.05f);
+    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
+}
+
+void setGridLineColor()
+{
+    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
+}
+
+void setSpinButtonFillColor()
+{
+    if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.015f, 0.45f, 0.32f);
+    else if(themePicked == 2) glColor3f(1.0f, 0.45f, 0.75f);
+}
+
+void setThemeButtonFillColor()
+{
+    if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.015f, 0.45f, 0.32f);
+    else if(themePicked == 2) glColor3f(0.05f, 0.92f, 0.0f);
+}
+
+void setActionButtonTextColor()
+{
+    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
+    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+}
+
+void setSlotSymbolColor(int type)
+{
+    switch(type)
+    {
+        case ITEM_TYPE_TEST:
+            if(themePicked == 0) glColor3f(1.0f, 0.0f, 0.0f);
+            else if(themePicked == 1) glColor3f(0.09f, 0.36f, 0.095f);
+            else if(themePicked == 2) glColor3f(1.0f, 0.0f, 0.0f);
+            break;
+
+        case ITEM_TYPE_CASH:
+            if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
+            else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
+            else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
+            break;
+
+        case ITEM_TYPE_DIAMOND:
+            if(themePicked == 0) glColor3f(0.2f, 0.6f, 0.9f);
+            else if(themePicked == 1) glColor3f(0.7f, 0.12f, 0.27f);
+            else if(themePicked == 2) glColor3f(0.2f, 0.6f, 0.9f);
+            break;
+
+        case ITEM_TYPE_ROMB:
+            if(themePicked == 0) glColor3f(0.9f, 0.1f, 0.9f);
+            else if(themePicked == 1) glColor3f(0.97f, 0.6f, 0.03f);
+            else if(themePicked == 2) glColor3f(0.97f, 0.1f, 0.51f);
+            break;
+
+        case ITEM_TYPE_BAR:
+            if(themePicked == 0) glColor3f(1.0f, 0.8f, 0.0f);
+            else if(themePicked == 1) glColor3f(0.7f, 0.8f, 0.0f);
+            else if(themePicked == 2) glColor3f(1.0f, 0.8f, 0.0f);
+            break;
+    }
+}
+
+void setBarTextColor()
+{
+    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
+    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
+}
+
+void drawNotificationMessage()
+{
+    if(strlen(notificationMessage) == 0) return;
+
+    setNotificationColor();
+    drawText(-0.95f, -0.95f, GLUT_BITMAP_HELVETICA_18, notificationMessage);
+}
+
+void clearNotificationMessage()
 {
     notificationMessage[0] = '\0';
     glutPostRedisplay();
 }
 
-void hideNotificationDelayed(int value)
+void clearNotificationAfterDelay(int value)
 {
     if(value == notificationTimerId)
     {
-        hideNotification();
+        clearNotificationMessage();
     }
 }
 
-void showNotification(int type, const char *content)
+void showTimedNotification(int type, const char *content)
 {
-    strcpy(notificationMessage, content);
+    snprintf(notificationMessage, sizeof(notificationMessage), "%s", content);
     notificationType = type;
     notificationTimerId++;
-    glutTimerFunc(5000, hideNotificationDelayed, notificationTimerId);
+    glutTimerFunc(5000, clearNotificationAfterDelay, notificationTimerId);
     glutPostRedisplay();
 }
 
-void updateCashBalanceUI()
+void drawCashBalance()
 {
-    int i = 0;
     char balanceText[32];
 
     sprintf(balanceText, "BALANCE:");
-    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
-    
-    glRasterPos2f(-0.95f, -0.65f);
+    setBalanceTextColor();
+    drawText(-0.95f, -0.65f, GLUT_BITMAP_HELVETICA_18, balanceText);
 
-    for(i = 0; i < (int)strlen(balanceText); i++)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, balanceText[i]);
-    }
-
-    balanceText[0] = '\0';
     sprintf(balanceText, "%d COINS", cashBalance);
-
-    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
-
-    glRasterPos2f(-0.95f, -0.75f);
-
-    for(i = 0; i < (int)strlen(balanceText); i++)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, balanceText[i]);
-    }
+    setBalanceTextColor();
+    drawText(-0.95f, -0.75f, GLUT_BITMAP_HELVETICA_18, balanceText);
 }
 
-void updateBetButtonsUI()
+void drawBetButton(int betIndex)
 {
-    int i = 0, j = 0;
     char betText[16];
+    float left;
+    float right;
+    int isSelected;
 
-    for(i = 0; i < 4; i++)
+    left = -0.65f + betIndex * 0.3f + 0.1f;
+    right = -0.35f + betIndex * 0.3f;
+    isSelected = (selectedBet == betIndex);
+
+    setBetButtonFillColor(isSelected);
+    drawFilledRectangle(left, -0.80f, right, -0.60f);
+
+    sprintf(betText, "BET %d", availableBets[betIndex]);
+    setBetButtonTextColor();
+    drawText(-0.5f + betIndex * 0.3f, -0.72f, GLUT_BITMAP_HELVETICA_18, betText);
+}
+
+void drawBetButtons()
+{
+    int i;
+
+    for(i = 0; i < BET_BUTTON_COUNT; i++)
     {
-        glBegin(GL_QUADS);
-        if(selectedBet == i)
-        {
-            if(themePicked == 0) glColor3f(0.0f, 0.92f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.02f, 0.45f, 0.31f);
-            else if(themePicked == 2) glColor3f(0.81f, 0.2f, 0.4f);
-        }
-
-        else
-        {
-            if(themePicked == 0) glColor3f(0.7f, 0.02f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.7f, 0.08f, 0.16f);
-            else if(themePicked == 2) glColor3f(1.0f, 0.67f, 0.7f);
-        }
-
-        glVertex2f(-0.65f + i * 0.3f + 0.1f, -0.80f);
-        glVertex2f(-0.35f + i * 0.3f, -0.80f);
-        glVertex2f(-0.35f + i * 0.3f, -0.60f);
-        glVertex2f(-0.65f + i * 0.3f + 0.1f, -0.60f);
-        glEnd();
-
-        betText[0] = '\0';
-        sprintf(betText, "BET %d", availableBets[i]);
-
-        if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-        else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
-        else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
-
-        glRasterPos2f(-0.5f + (i * 0.3f), -0.72f);
-
-        for(j = 0; j < (int)strlen(betText); j++)
-        {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, betText[j]);
-        }
+        drawBetButton(i);
     }
 }
 
-void updateWonItems()
+void copyFinalItemsAndClearWins(int copiedItems[])
 {
-    int i = 0, x[15];
-    for(i = 0; i < 15; i++)
+    int i;
+
+    for(i = 0; i < SLOT_ITEM_COUNT; i++)
     {
         slotItemWon[i] = 0;
-        x[i] = finalItems[i];
+        copiedItems[i] = finalItems[i];
     }
+}
 
-    slotWinAmount = 0;
-    int lineCombos[5] = {0, 0, 0, 0, 0};
+int getLineComboLength(const int slotItems[], const int linePositions[])
+{
+    if(slotItems[linePositions[0]] != slotItems[linePositions[1]]) return 0;
+    if(slotItems[linePositions[1]] != slotItems[linePositions[2]]) return 0;
+    if(slotItems[linePositions[2]] != slotItems[linePositions[3]]) return 3;
+    if(slotItems[linePositions[3]] != slotItems[linePositions[4]]) return 4;
+    return 5;
+}
 
-    int lineItems[5] = {x[0], x[1], x[2], x[0], x[2]};
+void markWinningLine(const int linePositions[], int comboLength)
+{
+    int i;
 
-    if(x[0] == x[3] && x[3] == x[6] && x[6] != x[9]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = 1, lineCombos[0] = 3;
-    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] != x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = 1, lineCombos[0] = 4;
-    else if(x[0] == x[3] && x[3] == x[6] && x[6] == x[9] && x[9] == x[12]) slotItemWon[0] = slotItemWon[3] = slotItemWon[6] = slotItemWon[9] = slotItemWon[12] = 1, lineCombos[0] = 5;
+    for(i = 0; i < comboLength; i++)
+    {
+        slotItemWon[linePositions[i]] = 1;
+    }
+}
 
-    if(x[1] == x[4] && x[4] == x[7] && x[7] != x[10]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = 1, lineCombos[1] = 3;
-    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] != x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = 1, lineCombos[1] = 4;
-    else if(x[1] == x[4] && x[4] == x[7] && x[7] == x[10] && x[10] == x[13]) slotItemWon[1] = slotItemWon[4] = slotItemWon[7] = slotItemWon[10] = slotItemWon[13] = 1, lineCombos[1] = 5;
-
-    if(x[2] == x[5] && x[5] == x[8] && x[8] != x[11]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = 1, lineCombos[2] = 3;
-    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] != x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = 1, lineCombos[2] = 4;
-    else if(x[2] == x[5] && x[5] == x[8] && x[8] == x[11] && x[11] == x[14]) slotItemWon[2] = slotItemWon[5] = slotItemWon[8] = slotItemWon[11] = slotItemWon[14] = 1, lineCombos[2] = 5;
-
-    if(x[0] == x[4] && x[4] == x[8] && x[8] != x[10]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = 1, lineCombos[3] = 3;
-    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] != x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = 1, lineCombos[3] = 4;
-    else if(x[0] == x[4] && x[4] == x[8] && x[8] == x[10] && x[10] == x[12]) slotItemWon[0] = slotItemWon[4] = slotItemWon[8] = slotItemWon[10] = slotItemWon[12] = 1, lineCombos[3] = 5;
-
-    if(x[2] == x[4] && x[4] == x[6] && x[6] != x[10]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = 1, lineCombos[4] = 3;
-    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] != x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = 1, lineCombos[4] = 4;
-    else if(x[2] == x[4] && x[4] == x[6] && x[6] == x[10] && x[10] == x[14]) slotItemWon[2] = slotItemWon[4] = slotItemWon[6] = slotItemWon[10] = slotItemWon[14] = 1, lineCombos[4] = 5;
-    
-
-    int slotItemWinMultipliers[5] = {10, 2, 5, 7, 4};
+int getLineWinAmount(int itemType, int comboLength, int betAmount)
+{
+    int slotItemWinMultipliers[ITEM_TYPE_COUNT] = {10, 2, 5, 7, 4};
     int lineWinMultiplier[3] = {1, 5, 10};
 
-    for(i = 0; i < 5; i++)
+    return betAmount * slotItemWinMultipliers[itemType] * lineWinMultiplier[comboLength - 3];
+}
+
+void updateWinningItems()
+{
+    int copiedItems[SLOT_ITEM_COUNT];
+    int lineCombos[SLOT_LINE_COUNT] = {0, 0, 0, 0, 0};
+    int lineItems[SLOT_LINE_COUNT];
+    int linePositions[SLOT_LINE_COUNT][SLOT_GRID_COLUMNS] = {
+        {0, 3, 6, 9, 12},
+        {1, 4, 7, 10, 13},
+        {2, 5, 8, 11, 14},
+        {0, 4, 8, 10, 12},
+        {2, 4, 6, 10, 14}
+    };
+    int i;
+
+    copyFinalItemsAndClearWins(copiedItems);
+    slotWinAmount = 0;
+
+    lineItems[0] = copiedItems[0];
+    lineItems[1] = copiedItems[1];
+    lineItems[2] = copiedItems[2];
+    lineItems[3] = copiedItems[0];
+    lineItems[4] = copiedItems[2];
+
+    for(i = 0; i < SLOT_LINE_COUNT; i++)
     {
+        lineCombos[i] = getLineComboLength(copiedItems, linePositions[i]);
+
         if(lineCombos[i] >= 3)
         {
-            slotWinAmount += lastBetAmount * slotItemWinMultipliers[lineItems[i]] * lineWinMultiplier[lineCombos[i] - 3];
+            markWinningLine(linePositions[i], lineCombos[i]);
+            slotWinAmount += getLineWinAmount(lineItems[i], lineCombos[i], lastBetAmount);
         }
     }
 }
 
-void shuffleSlotItems()
+void shuffleVisibleSymbols()
 {
-    int i = 0;
-    for(i = 0; i < 15; i++)
+    int i;
+
+    for(i = 0; i < SLOT_ITEM_COUNT; i++)
     {
         slotItemWon[i] = 0;
-        displayedItems[i] = rand() % 5;
+        displayedItems[i] = rand() % ITEM_TYPE_COUNT;
     }
 }
 
-void generateFinalItems()
+void generateSpinResult()
 {
-    int i = 0;
-    for(i = 0; i < 15; i++)
+    int i;
+
+    for(i = 0; i < SLOT_ITEM_COUNT; i++)
     {
         slotItemWon[i] = 0;
-        finalItems[i] = rand() % 5;
+        finalItems[i] = rand() % ITEM_TYPE_COUNT;
 
         while(displayedItems[i] == finalItems[i])
         {
-            displayedItems[i] = rand() % 5;
+            displayedItems[i] = rand() % ITEM_TYPE_COUNT;
         }
     }
 }
 
-void drawSlotItem(int type, float x, float y)
+void drawTestSymbol(float x, float y)
 {
-    int i = 0;
-    switch(type)
-    {
-        case ITEM_TYPE_TEST:
-        {
-            // {-0.94f, 0.88f, -0.57f, 0.45f},
-            
-            glBegin(GL_QUADS);
-            
-            if(themePicked == 0) glColor3f(1.0f, 0.0f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.09f, 0.36f, 0.095f);
-            else if(themePicked == 2) glColor3f(1.0f, 0.0f, 0.0f);
+    setSlotSymbolColor(ITEM_TYPE_TEST);
+    drawFilledRectangle(x + 0.1f, y - 0.12f, x + 0.255f, y - 0.08f);
 
-            glVertex2f(x + 0.1f, y - 0.08f);
-            glVertex2f(x + 0.255f, y - 0.08f);
-            glVertex2f(x + 0.255f, y - 0.12f);
-            glVertex2f(x + 0.1f, y - 0.12f);
-            glEnd();
-
-            glBegin(GL_QUADS);
-
-            if(themePicked == 0) glColor3f(1.0f, 0.0f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.09f, 0.36f, 0.095f);
-            else if(themePicked == 2) glColor3f(1.0f, 0.0f, 0.0f);
-
-            glVertex2f(x + 0.255f, y - 0.11f);
-            glVertex2f(x + 0.145f, y - 0.36f);
-            glVertex2f(x + 0.115f, y - 0.36f);
-            glVertex2f(x + 0.225f, y - 0.11f);
-            glEnd();
-
-            break;
-        }
-
-        case ITEM_TYPE_CASH:
-        {
-            for(i = 0; i < 3; i++)
-            {
-                glBegin(GL_QUADS);
-                
-                if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-                else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
-                else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
-
-                glVertex2f(x + 0.1f, y - 0.08f - i * 0.11f);
-                glVertex2f(x + 0.255f, y - 0.08f - i * 0.11f);
-                glVertex2f(x + 0.255f, y - 0.12f - i * 0.11f);
-                glVertex2f(x + 0.1f, y - 0.12f - i * 0.11f);
-                glEnd();
-            }
-
-            glBegin(GL_QUADS);
-
-            if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-            else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
-            else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
-
-            glVertex2f(x + 0.1f, y - 0.08f);
-            glVertex2f(x + 0.125f, y - 0.08f);
-            glVertex2f(x + 0.125f, y - 0.22f);
-            glVertex2f(x + 0.1f, y - 0.22f);
-            glEnd();
-
-            glBegin(GL_QUADS);
-
-            if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-            else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
-            else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
-
-            glVertex2f(x + 0.23f, y - 0.20f);
-            glVertex2f(x + 0.255f, y - 0.20f);
-            glVertex2f(x + 0.255f, y - 0.34f);
-            glVertex2f(x + 0.23f, y - 0.34f);
-            glEnd();
-
-            glBegin(GL_QUADS);
-
-            if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
-            else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
-            else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
-
-            glVertex2f(x + 0.17f, y - 0.05f);
-            glVertex2f(x + 0.195f, y - 0.05f);
-            glVertex2f(x + 0.195f, y - 0.37f);
-            glVertex2f(x + 0.17f, y - 0.37f);
-            glEnd();
-            break;
-        }
-    
-        case ITEM_TYPE_DIAMOND:
-        {
-            glBegin(GL_TRIANGLES);
-
-            if(themePicked == 0) glColor3f(0.2f, 0.6f, 0.9f);
-            else if(themePicked == 1) glColor3f(0.7f, 0.12f, 0.27f);
-            else if(themePicked == 2) glColor3f(0.2f, 0.6f, 0.9f);
-
-            glVertex2f(x + 0.175f, y - 0.33f);
-            glVertex2f(x + 0.1f, y - 0.13f);
-            glVertex2f(x + 0.25f, y - 0.13f);
-            glEnd();
-
-            glBegin(GL_POLYGON);
-
-            if(themePicked == 0) glColor3f(0.2f, 0.6f, 0.9f);
-            else if(themePicked == 1) glColor3f(0.7f, 0.12f, 0.27f);
-            else if(themePicked == 2) glColor3f(0.2f, 0.6f, 0.9f);
-
-            glVertex2f(x + 0.1f, y - 0.13f);
-            glVertex2f(x + 0.125f, y - 0.08f);
-            glVertex2f(x + 0.225f, y - 0.08f);
-            glVertex2f(x + 0.25f, y - 0.13f);
-            glEnd();
-            break;
-        }
-   
-        case ITEM_TYPE_ROMB:
-        {
-            glBegin(GL_POLYGON);
-            if(themePicked == 0) glColor3f(0.9f, 0.1f, 0.9f);
-            else if(themePicked == 1) glColor3f(0.97f, 0.6f, 0.03f);
-            else if(themePicked == 2) glColor3f(0.97f, 0.1f, 0.51f);
-            glVertex2f(x + 0.175f, y - 0.10f);
-            glVertex2f(x + 0.125f, y - 0.22f);
-            glVertex2f(x + 0.175f, y - 0.34f);
-            glVertex2f(x + 0.225f, y - 0.22f);
-            glEnd();
-            break;
-        }
-   
-        case ITEM_TYPE_BAR:
-        {
-            glBegin(GL_QUADS);
-            if(themePicked == 0) glColor3f(1.0f, 0.8f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.7f, 0.8f, 0.0f);
-            else if(themePicked == 2) glColor3f(1.0f, 0.8f, 0.0f);
-            glVertex2f(x + 0.10f, y - 0.1f);
-            glVertex2f(x + 0.255f, y - 0.1f);
-            glVertex2f(x + 0.255f, y - 0.3f);
-            glVertex2f(x + 0.10f, y - 0.3f);
-            glEnd();
-
-            if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-            else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-            else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
-            glRasterPos2f(x + 0.145f, y - 0.22f);
-
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'B');
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'A');
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'R');
-            break;
-        }
-    }
+    setSlotSymbolColor(ITEM_TYPE_TEST);
+    glBegin(GL_QUADS);
+    glVertex2f(x + 0.255f, y - 0.11f);
+    glVertex2f(x + 0.145f, y - 0.36f);
+    glVertex2f(x + 0.115f, y - 0.36f);
+    glVertex2f(x + 0.225f, y - 0.11f);
+    glEnd();
 }
 
-void drawSlotItems()
+void drawCashSymbol(float x, float y)
 {
-    struct slotItemDesign {
-        float startX;
-        float startY;
-        float endX;
-        float endY;
-    } slotItemDesigns[15];
+    int i;
 
-    int i = 0, j = 0;
-    FILE *f_in = fopen(OFFSETS_FILE, "r");
-    if(f_in == NULL)    
-    {
-        printf("Error opening offsets file!\n");
-        return;
-    }
-
-    while(i < 15 && !feof(f_in))
-    {
-        fscanf(f_in, "%f %f %f %f", &slotItemDesigns[i].startX, &slotItemDesigns[i].startY, &slotItemDesigns[i].endX, &slotItemDesigns[i].endY);
-        i++;
-    }
-
-    fclose(f_in);
+    setSlotSymbolColor(ITEM_TYPE_CASH);
 
     for(i = 0; i < 3; i++)
     {
-        for(j = 0; j < 5; j++)
+        drawFilledRectangle(
+            x + 0.1f,
+            y - 0.12f - i * 0.11f,
+            x + 0.255f,
+            y - 0.08f - i * 0.11f
+        );
+    }
+
+    drawFilledRectangle(x + 0.1f, y - 0.22f, x + 0.125f, y - 0.08f);
+    drawFilledRectangle(x + 0.23f, y - 0.34f, x + 0.255f, y - 0.20f);
+    drawFilledRectangle(x + 0.17f, y - 0.37f, x + 0.195f, y - 0.05f);
+}
+
+void drawDiamondSymbol(float x, float y)
+{
+    setSlotSymbolColor(ITEM_TYPE_DIAMOND);
+
+    glBegin(GL_TRIANGLES);
+    glVertex2f(x + 0.175f, y - 0.33f);
+    glVertex2f(x + 0.1f, y - 0.13f);
+    glVertex2f(x + 0.25f, y - 0.13f);
+    glEnd();
+
+    glBegin(GL_POLYGON);
+    glVertex2f(x + 0.1f, y - 0.13f);
+    glVertex2f(x + 0.125f, y - 0.08f);
+    glVertex2f(x + 0.225f, y - 0.08f);
+    glVertex2f(x + 0.25f, y - 0.13f);
+    glEnd();
+}
+
+void drawRombSymbol(float x, float y)
+{
+    setSlotSymbolColor(ITEM_TYPE_ROMB);
+
+    glBegin(GL_POLYGON);
+    glVertex2f(x + 0.175f, y - 0.10f);
+    glVertex2f(x + 0.125f, y - 0.22f);
+    glVertex2f(x + 0.175f, y - 0.34f);
+    glVertex2f(x + 0.225f, y - 0.22f);
+    glEnd();
+}
+
+void drawBarSymbol(float x, float y)
+{
+    setSlotSymbolColor(ITEM_TYPE_BAR);
+    drawFilledRectangle(x + 0.10f, y - 0.3f, x + 0.255f, y - 0.1f);
+
+    setBarTextColor();
+    drawText(x + 0.145f, y - 0.22f, GLUT_BITMAP_HELVETICA_18, "BAR");
+}
+
+void drawSlotSymbol(int type, float x, float y)
+{
+    switch(type)
+    {
+        case ITEM_TYPE_TEST:
+            drawTestSymbol(x, y);
+            break;
+
+        case ITEM_TYPE_CASH:
+            drawCashSymbol(x, y);
+            break;
+
+        case ITEM_TYPE_DIAMOND:
+            drawDiamondSymbol(x, y);
+            break;
+
+        case ITEM_TYPE_ROMB:
+            drawRombSymbol(x, y);
+            break;
+
+        case ITEM_TYPE_BAR:
+            drawBarSymbol(x, y);
+            break;
+    }
+}
+
+int loadSlotItemDesigns(SlotItemDesign slotItemDesigns[])
+{
+    int i;
+    FILE *offsetsFile;
+
+    i = 0;
+    offsetsFile = fopen(OFFSETS_FILE, "r");
+    if(offsetsFile == NULL)
+    {
+        printf("Error opening offsets file!\n");
+        return 0;
+    }
+
+    while(i < SLOT_ITEM_COUNT && fscanf(offsetsFile, "%f %f %f %f",
+        &slotItemDesigns[i].startX,
+        &slotItemDesigns[i].startY,
+        &slotItemDesigns[i].endX,
+        &slotItemDesigns[i].endY) == 4)
+    {
+        i++;
+    }
+
+    fclose(offsetsFile);
+    return i == SLOT_ITEM_COUNT;
+}
+
+void drawSlotCellBackground(const SlotItemDesign *slotItemDesign, int isWinningCell)
+{
+    setSlotCellBackgroundColor(isWinningCell);
+    drawFilledRectangle(
+        slotItemDesign->startX,
+        slotItemDesign->endY,
+        slotItemDesign->endX,
+        slotItemDesign->startY
+    );
+}
+
+void drawAllSlotCells()
+{
+    SlotItemDesign slotItemDesigns[SLOT_ITEM_COUNT];
+    int row;
+    int column;
+    int itemIndex;
+
+    if(!loadSlotItemDesigns(slotItemDesigns)) return;
+
+    for(row = 0; row < SLOT_GRID_ROWS; row++)
+    {
+        for(column = 0; column < SLOT_GRID_COLUMNS; column++)
         {
-            glBegin(GL_QUADS);
-            
-            if(slotItemWon[i * 5 + j])
-            {
-                if(themePicked == 0) glColor3f(0.0f, 0.92f, 0.0f);
-                else if(themePicked == 1) glColor3f(0.0f, 0.92f, 0.0f);
-                else if(themePicked == 2) glColor3f(0.4f, 0.8f, 0.56f);
-            }
-
-            else
-            {
-                if(themePicked == 0) glColor3f(0.94f, 0.6f, 0.5f);
-                else if(themePicked == 1) glColor3f(0.999f, 0.764f, 0.5f);
-                else if(themePicked == 2) glColor3f(0.8f, 0.33f, 0.64f);
-            }
-
-            glVertex2f(slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].startY);
-            glVertex2f(slotItemDesigns[i * 5 + j].endX, slotItemDesigns[i * 5 + j].startY);
-            glVertex2f(slotItemDesigns[i * 5 + j].endX, slotItemDesigns[i * 5 + j].endY);
-            glVertex2f(slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].endY);
-            glEnd();
-
-            drawSlotItem(displayedItems[i * 5 + j], slotItemDesigns[i * 5 + j].startX, slotItemDesigns[i * 5 + j].startY);
+            itemIndex = row * SLOT_GRID_COLUMNS + column;
+            drawSlotCellBackground(&slotItemDesigns[itemIndex], slotItemWon[itemIndex]);
+            drawSlotSymbol(displayedItems[itemIndex], slotItemDesigns[itemIndex].startX, slotItemDesigns[itemIndex].startY);
         }
     }
 }
 
-void onSpinStop()
+void finishSpin()
 {
+    char message[64];
+
     spinStep = 0;
 
     #ifdef TEST_MODE
         printf("\nSPIN STOPPED!!!!");
     #endif
 
-    updateWonItems();
+    updateWinningItems();
     glutPostRedisplay();
 
-    char message[64];
     if(slotWinAmount > 0)
     {
         sprintf(message, "(+) You won %d coins!", slotWinAmount);
-        showNotification(NOTIFICATION_TYPE_SUCCESS, message);
+        showTimedNotification(NOTIFICATION_TYPE_SUCCESS, message);
         cashBalance += slotWinAmount;
-        updateCashBalanceUI();
+        drawCashBalance();
 
         sprintf(message, "[WIN] +%d coins (bet: %d, new balance: %d)", slotWinAmount, availableBets[selectedBet], cashBalance);
-        userLog(message);
+        appendLogMessage(message);
     }
-
     else
     {
         sprintf(message, "(-) You lost %d coins!", lastBetAmount);
-        showNotification(NOTIFICATION_TYPE_ERROR, message);
+        showTimedNotification(NOTIFICATION_TYPE_ERROR, message);
 
         sprintf(message, "[LOSE] -%d coins (bet: %d, new balance: %d)", lastBetAmount, availableBets[selectedBet], cashBalance);
-        userLog(message);
+        appendLogMessage(message);
     }
 }
 
-void spinTimer(int value)
+void revealNextSpinSymbol(int value)
 {
     (void)value;
 
-    if(spinStep >= 15)
+    if(spinStep >= SLOT_ITEM_COUNT)
     {
-        onSpinStop();
+        finishSpin();
         return;
     }
 
@@ -575,339 +683,298 @@ void spinTimer(int value)
 
     glutPostRedisplay();
 
-    if(spinStep < 15)
+    if(spinStep < SLOT_ITEM_COUNT)
     {
-        glutTimerFunc(SPIN_TIMER_DELAY, spinTimer, 0);
+        glutTimerFunc(SPIN_TIMER_DELAY, revealNextSpinSymbol, 0);
     }
     else
     {
-        onSpinStop();
+        finishSpin();
     }
 }
 
-void handleSpin()
+void startSpinAnimation()
 {
     if(spinStep > 0) return;
 
-    glutTimerFunc(SPIN_TIMER_DELAY, spinTimer, 0);
+    glutTimerFunc(SPIN_TIMER_DELAY, revealNextSpinSymbol, 0);
 }
 
-void drawSlotMachineContainerOutline()
+void drawMachineFrame()
 {
-    glBegin(GL_QUADS);
-    
-    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.1f, 0.05f, 0.05f);
-    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
-
-	glVertex2f(-0.95f, -0.5f);
-	glVertex2f( 0.95f, -0.5f);
-	glVertex2f( 0.95f, 0.9f);
-	glVertex2f(-0.95f, 0.9f);
-	glEnd();
+    setMachineFrameColor();
+    drawFilledRectangle(-0.95f, -0.5f, 0.95f, 0.9f);
 }
 
-void drawSlotMachineRows()
+void drawGridLines()
 {
-    int i = 0;
-    glBegin(GL_QUADS);
+    int i;
 
-    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
+    setGridLineColor();
+    drawFilledRectangle(-0.95f, 0.435f, 0.95f, 0.45f);
 
-    glVertex2f(-0.95f, 0.45f);
-    glVertex2f(0.95f, 0.45f);
-    glVertex2f(0.95f, 0.435f);
-    glVertex2f(-0.95f, 0.435f);
-    glEnd();
-
-    glBegin(GL_QUADS);
-
-    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
-    
-    glVertex2f(-0.95f, -0.02f);
-    glVertex2f(0.95f, -0.02f);
-    glVertex2f(0.95f, -0.035f);
-    glVertex2f(-0.95f, -0.035f);
-    glEnd();
+    setGridLineColor();
+    drawFilledRectangle(-0.95f, -0.035f, 0.95f, -0.02f);
 
     for(i = 0; i < 4; i++)
     {
-        glBegin(GL_QUADS);
-
-        if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-        else if(themePicked == 1) glColor3f(0.0f, 0.0f, 0.0f);
-        else if(themePicked == 2) glColor3f(0.53f, 0.12f, 0.6f);
-
-        glVertex2f(-0.575f + i * 0.38f, -0.5f);
-        glVertex2f(-0.575f + i * 0.38f + 0.01f, -0.5f);
-        glVertex2f(-0.575f + i * 0.38f + 0.01f, 0.9f);
-        glVertex2f(-0.575f + i * 0.38f, 0.9f);
-        glEnd();
+        setGridLineColor();
+        drawFilledRectangle(
+            -0.575f + i * 0.38f,
+            -0.5f,
+            -0.575f + i * 0.38f + 0.01f,
+            0.9f
+        );
     }
 }
 
-void drawSlotSpinButton()
+void drawSpinButton()
 {
-    glBegin(GL_QUADS);
+    setSpinButtonFillColor();
+    drawFilledRectangle(0.65f, -0.80f, 0.9f, -0.60f);
 
-    if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.015f, 0.45f, 0.32f);
-    else if(themePicked == 2) glColor3f(1.0f, 0.45f, 0.75f);
-    
-    glVertex2f(0.65f, -0.80f);
-    glVertex2f(0.9f, -0.80f);
-    glVertex2f(0.9f, -0.60f);
-    glVertex2f(0.65f, -0.60f);
-    glEnd();
-
-    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
-    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
-
-    glRasterPos2f(0.735f, -0.72f);
-
-    char tempText[7] = "SPIN";
-    for(int i = 0; i < (int)strlen(tempText); i++)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, tempText[i]);
-    }
+    setActionButtonTextColor();
+    drawText(0.735f, -0.72f, GLUT_BITMAP_HELVETICA_18, "SPIN");
 }
 
 void drawThemeButton()
 {
-    glBegin(GL_QUADS);
-    if(themePicked == 0) glColor3f(0.05f, 0.92f, 0.0f);
-    else if(themePicked == 1) glColor3f(0.015f, 0.45f, 0.32f);
-    else if(themePicked == 2) glColor3f(0.05f, 0.92f, 0.0f);
+    setThemeButtonFillColor();
+    drawFilledRectangle(-0.94f, -0.87f, -0.82f, -0.80f);
 
-    glVertex2f(-0.94f, -0.87f);
-    glVertex2f(-0.82f, -0.87f);
-    glVertex2f(-0.82f, -0.80f);
-    glVertex2f(-0.94f, -0.80f);
-    glEnd();
-
-    if(themePicked == 0) glColor3f(0.0f, 0.0f, 0.0f);
-    else if(themePicked == 1) glColor3f(1.0f, 1.0f, 1.0f);
-    else if(themePicked == 2) glColor3f(0.0f, 0.0f, 0.0f);
-
-    glRasterPos2f(-0.92f, -0.85f);
-    char tempText[6] = "THEME";
-    for(int i = 0; i < (int)strlen(tempText); i++)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, tempText[i]);
-    }
+    setActionButtonTextColor();
+    drawText(-0.92f, -0.85f, GLUT_BITMAP_HELVETICA_12, "THEME");
 }
 
-void drawSlotMachineContainer() 
+void drawGameScreen()
 {
     if(themePicked == 0) glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     else if(themePicked == 1) glClearColor(0.66f, 0.89f, 0.898f, 1.0f);
     else if(themePicked == 2) glClearColor(0.32f, 0.18f, 0.5f, 1.0f);
 
-	glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    drawSlotMachineContainerOutline();
-
-    drawSlotItems();
-
-    drawSlotMachineRows();
-
-    drawSlotSpinButton();
-
-    updateCashBalanceUI();
-
-    updateBetButtonsUI();
-
+    drawMachineFrame();
+    drawAllSlotCells();
+    drawGridLines();
+    drawSpinButton();
+    drawCashBalance();
+    drawBetButtons();
     drawThemeButton();
-    
-    createNotificationText();
+    drawNotificationMessage();
 
-	glFlush();
+    glFlush();
 }
 
-void handleSpinButton()
-{   
+void handleSpinButtonClick()
+{
     #ifdef TEST_MODE
         printf("\nSPIN BUTTON CLICKED!\n");
     #endif
 
     if(spinStep > 0) return;
+
     if(selectedBet < 0)
     {
-        showNotification(NOTIFICATION_TYPE_WARNING, "Please select a bet before spinning!");
+        showTimedNotification(NOTIFICATION_TYPE_WARNING, "Please select a bet before spinning!");
         return;
     }
 
-
     if(cashBalance < availableBets[selectedBet])
     {
-        showNotification(NOTIFICATION_TYPE_ERROR, "You don't have enough coins to select this bet!");
-
+        showTimedNotification(NOTIFICATION_TYPE_ERROR, "You don't have enough coins to select this bet!");
         selectedBet = -1;
-        updateBetButtonsUI();
+        drawBetButtons();
         return;
     }
 
     cashBalance -= availableBets[selectedBet];
     lastBetAmount = availableBets[selectedBet];
-    updateCashBalanceUI();
+    drawCashBalance();
 
-    showNotification(NOTIFICATION_TYPE_SUCCESS, "Spinning the reels... Good luck!");
-    
-    shuffleSlotItems();
-    generateFinalItems();
+    showTimedNotification(NOTIFICATION_TYPE_SUCCESS, "Spinning the reels... Good luck!");
 
-    handleSpin();
+    shuffleVisibleSymbols();
+    generateSpinResult();
+    startSpinAnimation();
 
     glutPostRedisplay();
 }
 
-void handleThemeButton()
+void handleThemeButtonClick()
 {
     if(themePicked < MAX_THEMES - 1) themePicked++;
     else themePicked = 0;
 
-    saveTheme();
+    saveSelectedTheme();
     glutPostRedisplay();
 }
 
-void onMouse(int button, int state, int x, int y) 
+void normalizeButtonBounds(ButtonBounds *buttonBounds)
 {
-    if(state == GLUT_DOWN && button == GLUT_LEFT_BUTTON) 
+    int temp;
+
+    temp = 0;
+
+    if(buttonBounds->x1 > buttonBounds->x2)
     {
-        int clickedBetButton = 0;
-        int betButtonCoords[][4] = {
-            {261, 500, 371, 585},
-            {433, 500, 543, 585},
-            {606, 500, 725, 585},
-            {780, 500, 890, 585}
-        };
+        temp = buttonBounds->x1;
+        buttonBounds->x1 = buttonBounds->x2;
+        buttonBounds->x2 = temp;
+    }
 
-        int x1 = 0, x2 = 0, y1 = 0, y2 = 0, temp = 0;
-
-        for(int i = 0; i < 4; i++)
-        {
-            x1 = betButtonCoords[i][0];
-            y1 = betButtonCoords[i][1];
-            x2 = betButtonCoords[i][2];
-            y2 = betButtonCoords[i][3];
-
-            if(x1 > x2) { temp = x1; x1 = x2; x2 = temp; }
-            if(y1 > y2) { temp = y1; y1 = y2; y2 = temp; }
-
-            if(x >= x1 && x <= x2 && y >= y1 && y <= y2)
-            {
-                #ifdef TEST_MODE
-                    printf("Clicked BET button %d\n", i);
-                #endif
-
-                if(spinStep > 0)
-                {
-                    showNotification(NOTIFICATION_TYPE_WARNING, "You can't change your bet while the reels are spinning!");
-                    return;
-                }
-
-                if(cashBalance < availableBets[i])
-                {
-                    showNotification(NOTIFICATION_TYPE_ERROR, "You don't have enough coins to select this bet!");
-
-                    selectedBet = -1;
-
-                    #ifdef TEST_MODE
-                        printf("n-ai bani boss\n");
-                    #endif
-                }
-
-                else
-                {
-                    selectedBet = i;
-
-                    #ifdef TEST_MODE
-                        printf("selected bet: %d\n", availableBets[selectedBet]);
-                    #endif
-                }
-
-                updateBetButtonsUI();
-                glutPostRedisplay();
-                clickedBetButton = 1;
-                break;
-            }
-        }
-
-        #ifdef TEST_MODE
-            printf("\nclick la %d %d\n", x, y);
-        #endif
-
-        if(!clickedBetButton)
-        {
-            int action = 0;
-            x1 = 950;
-            x2 = 1093;
-            y1 = 510;
-            y2 = 580;
-
-            if(x1 > x2) { temp = x1; x1 = x2; x2 = temp; }
-            if(y1 > y2) { temp = y1; y1 = y2; y2 = temp; }
-
-            if(x >= x1 && x <= x2 && y >= y1 && y <= y2)
-            {
-                handleSpinButton();
-                action = 1;
-            }
-
-            if(!action)
-            {
-                x1 = 35;
-                x2 = 102;
-                y1 = 576;
-                y2 = 697;
-
-                if(x1 > x2) { temp = x1; x1 = x2; x2 = temp; }
-                if(y1 > y2) { temp = y1; y1 = y2; y2 = temp; }
-
-                if(x >= x1 && x <= x2 && y >= y1 && y <= y2)
-                {
-                    handleThemeButton();
-                    action = 1;
-                }
-            }
-        }
+    if(buttonBounds->y1 > buttonBounds->y2)
+    {
+        temp = buttonBounds->y1;
+        buttonBounds->y1 = buttonBounds->y2;
+        buttonBounds->y2 = temp;
     }
 }
 
-void reshape(int width, int height) 
+int isPointInsideButton(int x, int y, ButtonBounds buttonBounds)
 {
-    if (width != GAME_WINDOW_WIDTH || height != GAME_WINDOW_HEIGHT) 
+    normalizeButtonBounds(&buttonBounds);
+    return x >= buttonBounds.x1 && x <= buttonBounds.x2 && y >= buttonBounds.y1 && y <= buttonBounds.y2;
+}
+
+int getClickedBetButton(int x, int y)
+{
+    ButtonBounds betButtonBounds[BET_BUTTON_COUNT] = {
+        {261, 500, 371, 585},
+        {433, 500, 543, 585},
+        {606, 500, 725, 585},
+        {780, 500, 890, 585}
+    };
+    int i;
+
+    for(i = 0; i < BET_BUTTON_COUNT; i++)
+    {
+        if(isPointInsideButton(x, y, betButtonBounds[i]))
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void handleBetButtonClick(int betIndex)
+{
+    if(spinStep > 0)
+    {
+        showTimedNotification(NOTIFICATION_TYPE_WARNING, "You can't change your bet while the reels are spinning!");
+        return;
+    }
+
+    if(cashBalance < availableBets[betIndex])
+    {
+        showTimedNotification(NOTIFICATION_TYPE_ERROR, "You don't have enough coins to select this bet!");
+        selectedBet = -1;
+
+        #ifdef TEST_MODE
+            printf("n-ai bani boss\n");
+        #endif
+    }
+    else
+    {
+        selectedBet = betIndex;
+
+        #ifdef TEST_MODE
+            printf("selected bet: %d\n", availableBets[selectedBet]);
+        #endif
+    }
+
+    drawBetButtons();
+    glutPostRedisplay();
+}
+
+void handleActionButtonClick(int x, int y)
+{
+    ButtonBounds spinButtonBounds;
+    ButtonBounds themeButtonBounds;
+
+    spinButtonBounds.x1 = 950;
+    spinButtonBounds.x2 = 1093;
+    spinButtonBounds.y1 = 510;
+    spinButtonBounds.y2 = 580;
+
+    themeButtonBounds.x1 = 35;
+    themeButtonBounds.x2 = 102;
+    themeButtonBounds.y1 = 576;
+    themeButtonBounds.y2 = 697;
+
+    if(isPointInsideButton(x, y, spinButtonBounds))
+    {
+        handleSpinButtonClick();
+        return;
+    }
+
+    if(isPointInsideButton(x, y, themeButtonBounds))
+    {
+        handleThemeButtonClick();
+    }
+}
+
+void mouseCallback(int button, int state, int x, int y)
+{
+    int clickedBetButton;
+
+    if(state != GLUT_DOWN || button != GLUT_LEFT_BUTTON) return;
+
+    clickedBetButton = getClickedBetButton(x, y);
+
+    if(clickedBetButton >= 0)
+    {
+        #ifdef TEST_MODE
+            printf("Clicked BET button %d\n", clickedBetButton);
+        #endif
+
+        handleBetButtonClick(clickedBetButton);
+        return;
+    }
+
+    #ifdef TEST_MODE
+        printf("\nclick la %d %d\n", x, y);
+    #endif
+
+    handleActionButtonClick(x, y);
+}
+
+void keepWindowFixedSize(int width, int height)
+{
+    if(width != GAME_WINDOW_WIDTH || height != GAME_WINDOW_HEIGHT)
     {
         glutReshapeWindow(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
     }
 }
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
-    loadTheme();
-    userLog("New slots session!!!!");
+    int screenWidth;
+    int screenHeight;
+    int windowPosX;
+    int windowPosY;
+
+    loadSavedTheme();
+    appendLogMessage("New slots session!!!!");
 
     glutInit(&argc, argv);
     glutInitWindowSize(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
 
-    int screenWidth = glutGet(GLUT_SCREEN_WIDTH);
-    int screenHeight = glutGet(GLUT_SCREEN_HEIGHT);
+    screenWidth = glutGet(GLUT_SCREEN_WIDTH);
+    screenHeight = glutGet(GLUT_SCREEN_HEIGHT);
 
-    int windowPosX = (screenWidth - GAME_WINDOW_WIDTH) / 2;
-    int windowPosY = (screenHeight - GAME_WINDOW_HEIGHT) / 2;
+    windowPosX = (screenWidth - GAME_WINDOW_WIDTH) / 2;
+    windowPosY = (screenHeight - GAME_WINDOW_HEIGHT) / 2;
 
     glutInitWindowPosition(windowPosX, windowPosY);
     glutCreateWindow("Slot Machine");
-    glutMouseFunc(onMouse);
-    shuffleSlotItems();
+    glutMouseFunc(mouseCallback);
+    shuffleVisibleSymbols();
 
-    glutDisplayFunc(drawSlotMachineContainer);
-    glutReshapeFunc(reshape); 
+    glutDisplayFunc(drawGameScreen);
+    glutReshapeFunc(keepWindowFixedSize);
     glutMainLoop();
+
     return 0;
 }
