@@ -182,8 +182,5 @@ Functiile pentru input:
 | `keepWindowFixedSize` | pastreaza fereastra la dimensiunea stabilita |
 
 ## 8. Concluzie
-
-Proiectul implementeaza un slot machine complet functional, cu interfata grafica, animatie, mize diferite, teme vizuale, sistem de castiguri si log-uri. Codul este impartit in functii care separa desenarea, logica jocului, citirea fisierelor si tratarea inputului, astfel incat proiectul sa fie mai usor de explicat si de urmarit.
-
-Cele mai importante parti ale proiectului sunt calcularea castigurilor prin multiplicatori, verificarea celor 5 linii de castig si actualizarea interfetei in functie de starea jocului. Prin folosirea fisierelor `theme.txt`, `logs.txt` si `offsets.txt`, proiectul pastreaza si informatii externe, nu doar date din memoria programului.  
+nota 10??? 😁😁😁😁😁😁  
 ![nebunulajokuri](https://i.imgur.com/d0jQc84.jpeg)
