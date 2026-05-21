@@ -98,7 +98,7 @@ int themePicked = 1;
 
 char notificationMessage[64] = "";
 
-void appendLogMessage(const char *message)
+void appendLogMessage(char *message)
 {
     FILE *logFile;
 
@@ -139,7 +139,7 @@ void saveSelectedTheme()
     fclose(themeFile);
 }
 
-void drawText(float x, float y, void *font, const char *text)
+void drawText(float x, float y, void *font, char *text)
 {
     int i;
     int textLength;
@@ -265,34 +265,44 @@ void setSlotSymbolColor(int type)
     switch(type)
     {
         case ITEM_TYPE_TEST:
+        {
             if(themePicked == 0) glColor3f(1.0f, 0.0f, 0.0f);
             else if(themePicked == 1) glColor3f(0.09f, 0.36f, 0.095f);
             else if(themePicked == 2) glColor3f(1.0f, 0.0f, 0.0f);
             break;
+        }
 
         case ITEM_TYPE_CASH:
+        {
             if(themePicked == 0) glColor3f(0.0f, 0.8f, 0.1f);
             else if(themePicked == 1) glColor3f(0.05f, 0.07f, 0.55f);
             else if(themePicked == 2) glColor3f(0.0f, 0.8f, 0.1f);
             break;
+        }
 
         case ITEM_TYPE_DIAMOND:
+        {
             if(themePicked == 0) glColor3f(0.2f, 0.6f, 0.9f);
             else if(themePicked == 1) glColor3f(0.7f, 0.12f, 0.27f);
             else if(themePicked == 2) glColor3f(0.2f, 0.6f, 0.9f);
             break;
+        }
 
         case ITEM_TYPE_ROMB:
+        {
             if(themePicked == 0) glColor3f(0.9f, 0.1f, 0.9f);
             else if(themePicked == 1) glColor3f(0.97f, 0.6f, 0.03f);
             else if(themePicked == 2) glColor3f(0.97f, 0.1f, 0.51f);
             break;
+        }
 
         case ITEM_TYPE_BAR:
+        {
             if(themePicked == 0) glColor3f(1.0f, 0.8f, 0.0f);
             else if(themePicked == 1) glColor3f(0.7f, 0.8f, 0.0f);
             else if(themePicked == 2) glColor3f(1.0f, 0.8f, 0.0f);
             break;
+        }
     }
 }
 
@@ -325,7 +335,7 @@ void clearNotificationAfterDelay(int value)
     }
 }
 
-void showTimedNotification(int type, const char *content)
+void showTimedNotification(int type, char *content)
 {
     snprintf(notificationMessage, sizeof(notificationMessage), "%s", content);
     notificationType = type;
@@ -387,7 +397,7 @@ void copyFinalItemsAndClearWins(int copiedItems[])
     }
 }
 
-int getLineComboLength(const int slotItems[], const int linePositions[])
+int getLineComboLength(int slotItems[], int linePositions[])
 {
     if(slotItems[linePositions[0]] != slotItems[linePositions[1]]) return 0;
     if(slotItems[linePositions[1]] != slotItems[linePositions[2]]) return 0;
@@ -396,7 +406,7 @@ int getLineComboLength(const int slotItems[], const int linePositions[])
     return 5;
 }
 
-void markWinningLine(const int linePositions[], int comboLength)
+void markWinningLine(int linePositions[], int comboLength)
 {
     int i;
 
@@ -498,12 +508,7 @@ void drawCashSymbol(float x, float y)
 
     for(i = 0; i < 3; i++)
     {
-        drawFilledRectangle(
-            x + 0.1f,
-            y - 0.12f - i * 0.11f,
-            x + 0.255f,
-            y - 0.08f - i * 0.11f
-        );
+        drawFilledRectangle(x + 0.1f, y - 0.12f - i * 0.11f, x + 0.255f, y - 0.08f - i * 0.11f);
     }
 
     drawFilledRectangle(x + 0.1f, y - 0.22f, x + 0.125f, y - 0.08f);
@@ -555,24 +560,34 @@ void drawSlotSymbol(int type, float x, float y)
     switch(type)
     {
         case ITEM_TYPE_TEST:
+        {
             drawTestSymbol(x, y);
             break;
+        }
 
         case ITEM_TYPE_CASH:
+        { 
             drawCashSymbol(x, y);
             break;
+        }
 
         case ITEM_TYPE_DIAMOND:
+        {
             drawDiamondSymbol(x, y);
             break;
+        }
 
         case ITEM_TYPE_ROMB:
+        {
             drawRombSymbol(x, y);
             break;
+        }
 
         case ITEM_TYPE_BAR:
+        { 
             drawBarSymbol(x, y);
             break;
+        }
     }
 }
 
@@ -589,11 +604,7 @@ int loadSlotItemDesigns(SlotItemDesign slotItemDesigns[])
         return 0;
     }
 
-    while(i < SLOT_ITEM_COUNT && fscanf(offsetsFile, "%f %f %f %f",
-        &slotItemDesigns[i].startX,
-        &slotItemDesigns[i].startY,
-        &slotItemDesigns[i].endX,
-        &slotItemDesigns[i].endY) == 4)
+    while(i < SLOT_ITEM_COUNT && fscanf(offsetsFile, "%f %f %f %f", &slotItemDesigns[i].startX, &slotItemDesigns[i].startY, &slotItemDesigns[i].endX, &slotItemDesigns[i].endY) == 4)
     {
         i++;
     }
@@ -602,15 +613,10 @@ int loadSlotItemDesigns(SlotItemDesign slotItemDesigns[])
     return i == SLOT_ITEM_COUNT;
 }
 
-void drawSlotCellBackground(const SlotItemDesign *slotItemDesign, int isWinningCell)
+void drawSlotCellBackground(SlotItemDesign *slotItemDesign, int isWinningCell)
 {
     setSlotCellBackgroundColor(isWinningCell);
-    drawFilledRectangle(
-        slotItemDesign->startX,
-        slotItemDesign->endY,
-        slotItemDesign->endX,
-        slotItemDesign->startY
-    );
+    drawFilledRectangle(slotItemDesign->startX, slotItemDesign->endY, slotItemDesign->endX, slotItemDesign->startY);
 }
 
 void drawAllSlotCells()
@@ -717,12 +723,7 @@ void drawGridLines()
     for(i = 0; i < 4; i++)
     {
         setGridLineColor();
-        drawFilledRectangle(
-            -0.575f + i * 0.38f,
-            -0.5f,
-            -0.575f + i * 0.38f + 0.01f,
-            0.9f
-        );
+        drawFilledRectangle(-0.575f + i * 0.38f, -0.5f, -0.575f + i * 0.38f + 0.01f, 0.9f);
     }
 }
 
