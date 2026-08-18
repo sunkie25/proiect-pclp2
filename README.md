@@ -180,5 +180,4 @@ Functiile pentru input:
 | `keepWindowFixedSize` | pastreaza fereastra la dimensiunea stabilita |
 
 ## 8. Concluzie
-nota 10??? 😁😁😁😁😁😁  
 ![nebunulajokuri](https://i.imgur.com/d0jQc84.jpeg)
